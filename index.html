@@ -87,7 +87,7 @@
                                 </span>
                                 <!-- Video Link. -->
                                 <span class="link-block">
-                <a href="https://www.youtube.com/"
+                <a href="https://www.youtube.com/channel/UCVrTOJ5spohegXQ6jTpfY8A"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-youtube"></i>
@@ -138,10 +138,11 @@
         <div class="container is-max-desktop">
             <div class="hero-body">
                 <center>
-                    <video id="teaser" autoplay muted loop playsinline width="70%">
+                    <!-- <video id="teaser" autoplay muted loop playsinline width="70%">
                     <source src="./static/images/ego_video.mp4"
                         type="video/mp4">
-      </video>
+                    </video> -->
+                    <img src='static/images/teaser_figure.png'>
                 </center>
                 <h2 class="subtitle has-text-centered">
                     We introduce <span class="dnerf">Housekeep</span>, a benchmark to evaluate commonsense reasoning in the home for embodied AI.
@@ -162,7 +163,7 @@
                         <p>
                             We introduce <span class="dnerf">Housekeep</span>, a benchmark to evaluate commonsense reasoning in the home for embodied AI. In <span class="dnerf">Housekeep</span>, an embodied agent must tidy a house by rearranging misplaced
                             objects without explicit instructions specifying which objects need to be rearranged. Instead, the agent must learn from and is evaluated against human preferences of which objects belong where in a tidy house. Specifically,
-                            we collect a dataset of where humans typically place objects in tidy and untidy houses constituting 1799 objects, 268 object categories, 585 placements, and 105 rooms.
+                            <b>we collect a dataset of where humans typically place objects in tidy and untidy houses constituting 1799 objects, 268 object categories, 585 placements, and 105 rooms.</b>
                         </p>
                         <p>
                             Next, we propose a modular baseline approach for <span class="dnerf">Housekeep</span> that integrates planning, exploration, and navigation. It leverages a fine-tuned large language model (LLM) trained on an internet text corpus
@@ -180,27 +181,16 @@
             <!-- Abstract. -->
             <div class="columns is-centered has-text-centered">
                 <div class="column is-four-fifths">
+                    <h2 class="title is-3">Dataset</h2>
                     <div class="content">
-                        <img src="static/images/dataset.png">
+                        <p> The <span class="dnerf">Housekeep</span> dataset includes 1799 object models and 395 receptacle models from five popular asset repositories – Amazon Berkeley Objects (AB), Google Scanned Objects (GSO), ReplicaCAD (R-CAD), iGibson
+                            and YCB Objects.
+                        </p>
+                    </div>
+                    <div class="content">
+                        <img src="static/images/high_level_category.png"> This table gives the number of object and receptacle models obtained from different sources.
                     </div>
                     <h2 class="subtitle has-text-centered">
-                        We collect a dataset capturing human preferences of where objects go in tidy and untidy houses. In this table, we compare the scale of our dataset with the scale of other rearrangement benchmarks.
-                    </h2>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="container is-max-desktop">
-            <!-- Abstract. -->
-            <div class="columns is-centered has-text-centered">
-                <div class="column is-four-fifths">
-                    <div class="content">
-                        <img src="static/images/baseline.png">
-                    </div>
-                    <h2 class="subtitle has-text-centered">
-                        We develop a modular baseline that integrates planning, exploration and navigation modules. OR: Oracle, LM: LLM-based ranking (planning), FT: Frontier exploration.
                     </h2>
                 </div>
             </div>
