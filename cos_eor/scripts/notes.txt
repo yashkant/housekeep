@@ -1,0 +1,37 @@
+igibson:
+    1. object_metadata.json was labelled manually into overlapping object/receptacle bins (outdated)
+    2. object_metadata_v2.json was labelled manuallly into non-overalpping obj/rec bins
+    3. object_metadata_filled.json -- likely indicates metadata + rots/pos (outdated)
+
+global-mapping:
+    1. Built using adjust_assets_igib_map.py using scale-rot yamls
+    2. adjust_assets_igib_map.py also extracts existing mapping from igibson
+    3. adjust_assets_igib_map.py uses automatic tools to move objects along y-axis to check for contacts and dumps 'metadata_v2_readjusted.yaml'
+    4. adjust_assets_igib_map's input metadata is full_metadata['urdfs']
+
+scale-rots-yaml:
+    -- built using add_object_rotations_to_metadata, seeded from manually labelled igibson metadata
+    -- stores only (file, scale, rot, room), and is used when inserting the object in a new scenario
+
+scene_metadata_readjusted.yaml (inside each igib assets):
+    -- built using adjust_assets_igib.py
+    -- contain information to spin up the exact igibson scene in habitat
+    -- also stores default ORM of the scene
+
+global_mapping.yaml
+    -- built during adjust_assets_igib.py
+    -- we add non-art data w/o mapping as objs
+    -- contains default mapping across every igib scene
+    -- borrows the object-room mapping from scale-rots.yaml
+    -- this is used to create the .csv file used in dataset labeling
+
+metadata_v2.yaml
+    -- created during assets extraction from iGibson simulator
+    -- later used to source metadata_v2_readjusted.yaml which is built from adjust_assets_igib_and_map
+
+build-dataset-v2
+    -- non_art_scale_rotation_v2.yaml and art_scale_rotation_v3_sky.yaml is used for instantiating rotation and positions of non-scene objects
+
+
+build-dataset-v3
+    --

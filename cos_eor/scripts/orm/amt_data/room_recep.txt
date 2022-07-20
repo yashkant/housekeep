@@ -1,0 +1,128 @@
+bathroom|bathtub
+bathroom|bottom cabinet
+bathroom|carpet
+bathroom|counter
+bathroom|shelf
+bathroom|sink
+bathroom|table
+bathroom|toilet
+bathroom|top cabinet
+bedroom|basket
+bedroom|bed
+bedroom|bottom cabinet
+bedroom|carpet
+bedroom|chair
+bedroom|chest
+bedroom|coffee table
+bedroom|console table
+bedroom|counter
+bedroom|office chair
+bedroom|shelf
+bedroom|sofa chair
+bedroom|table
+childs room|bed
+childs room|bottom cabinet
+childs room|carpet
+childs room|chair
+childs room|chest
+childs room|counter
+childs room|shelf
+childs room|sofa
+childs room|sofa chair
+childs room|stool
+childs room|table
+childs room|top cabinet
+closet|bottom cabinet
+closet|shelf
+corridor|carpet
+corridor|chair
+corridor|chest
+corridor|console table
+corridor|dryer
+corridor|shelf
+corridor|table
+corridor|washer
+dining room|bottom cabinet
+dining room|carpet
+dining room|chair
+dining room|console table
+dining room|counter
+dining room|sofa
+dining room|table
+exercise room|treadmill
+garage|bottom cabinet
+garage|shelf
+home office|bottom cabinet
+home office|carpet
+home office|counter
+home office|office chair
+home office|shelf
+home office|table
+home office|top cabinet
+kitchen|bottom cabinet
+kitchen|carpet
+kitchen|chair
+kitchen|chest
+kitchen|coffee machine
+kitchen|cooktop
+kitchen|counter
+kitchen|dishwasher
+kitchen|fridge
+kitchen|microwave
+kitchen|oven
+kitchen|shelf
+kitchen|sink
+kitchen|stove
+kitchen|table
+kitchen|top cabinet
+living room|bottom cabinet
+living room|carpet
+living room|chair
+living room|chest
+living room|coffee table
+living room|console table
+living room|loudspeaker
+living room|office chair
+living room|shelf
+living room|sofa
+living room|sofa chair
+living room|speaker system
+living room|stool
+living room|table
+lobby|bottom cabinet
+lobby|carpet
+lobby|chair
+lobby|counter
+lobby|piano
+lobby|sofa chair
+lobby|stool
+lobby|table
+pantry room|counter
+pantry room|fridge
+pantry room|top cabinet
+playroom|bottom cabinet
+playroom|carpet
+playroom|chair
+playroom|counter
+playroom|piano
+playroom|shelf
+playroom|table
+storage room|counter
+storage room|dryer
+storage room|shelf
+storage room|sink
+storage room|table
+storage room|washer
+television room|bottom cabinet
+television room|chair
+television room|coffee table
+television room|shelf
+television room|sofa
+television room|sofa chair
+utility room|bottom cabinet
+utility room|carpet
+utility room|dryer
+utility room|sink
+utility room|table
+utility room|top cabinet
+utility room|washer
