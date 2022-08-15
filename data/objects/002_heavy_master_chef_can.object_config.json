@@ -1,0 +1,8 @@
+{
+  "friction_coefficient": 3.0,
+  "mass": 30.0,
+  "join_collision_meshes": false,
+  "collision_asset": "configs_convex/002_master_chef_cv_decomp.glb",
+  "render_asset": "ycb/002_master_chef_can/google_16k/textured.obj",
+  "requires_lighting": true
+}

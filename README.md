@@ -20,7 +20,9 @@ This repository contains the implementation of our ECCV 2022 paper [Housekeep: T
 - Install additional requirements with `pip install -r requirements.txt` in the base directory
 
 #### Data
-Find the instructions for setting up our dataset [here](data/README.md)
+Find the instructions for downloading object models from different sources and for setting up our data directory [here](data/README.md).
+
+The file `cos_eor/scripts/dump/scale_rots_all.npy` contains metadata information for the complete collection of object models. It includes the scales and rotations to use for placing these object models appropriately in the scenes.
 
 ## Running the baseline
 - Generate config files for running the experiments `./generate_configs.sh <exp_name> <explore_type> <rank_type>`
