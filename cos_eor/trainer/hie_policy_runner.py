@@ -241,8 +241,8 @@ class HiePolicyRunner(object):
 
                     num_episodes = len(all_episode_stats)
                     cur_episode = cur_episodes[env_idx]
-                    cur_episode.scene_id = Path(cur_episode.scene_id).stem
-                    cur_episode_id = f"{cur_episode.scene_id}_{cur_episode.episode_id}"
+                    scene_id = Path(cur_episode.scene_id).stem
+                    cur_episode_id = f"{scene_id}_{cur_episode.episode_id}"
                     episode_stats["episode_id"] = cur_episode_id
 
                     replays_file = replay_dir/f"ep_{cur_episode_id}.txt"
