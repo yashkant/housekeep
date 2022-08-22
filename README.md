@@ -34,6 +34,12 @@ This will create configuration files for all scenes inside `./logs/<exp_name>/co
 `./run_cli.sh <exp_name> <scene_name> <num_episodes>`
 The experiment logs will be written inside `logs/<exp_name>` directory.
 
+## Aggregating results
+Use the following command to aggregate metrics across scenes and save the aggregated values (average values with standard deviations) to a file:
+`python cos_eor/scripts/aggregrate_metrics.py --metrics-files logs/<exp_name>/metrics-{<scene_names>}* --subsplit <subsplit> --out-file <save_path>`. <br>
+`<scene_names>` is a comma separated list of scene names. Set this to `ihlen_1_int,merom_1_int` when evaluating on val scenes and `beechwood_1_int,benevolence_1_int,ihlen_0_int,merom_0_int` when evaluating on test scenes.<br>
+Use `<subsplit>` (set to either `all`, `seen` or `unseen`) to indicate if the metrics are to be aggregated across all episodes or across only the episodes containing seen or unseen objects.
+
 ## Citing
 
 If you find our work useful for your research, please consider citing:
