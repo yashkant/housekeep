@@ -1,6 +1,6 @@
 # Housekeep
 
-This repository contains the implementation of our ECCV 2022 paper [Housekeep: Tidying Virtual Households using Commonsense Reasoning](https://arxiv.org/pdf/2205.10712.pdf)
+This repository contains the implementation of our ECCV 2022 paper [Housekeep: Tidying Virtual Households using Commonsense Reasoning](https://yashkant.github.io/housekeep/)
 
 ![teaser](images/teaser_wout_ab.png)
 
