@@ -42,7 +42,6 @@ from collections import Counter
 from shutil import copyfile
 
 cwd = os.getcwd()
-assert cwd.endswith("cos-hab2") or cwd.endswith("p-viz-plan")
 sys.path.insert(1, os.path.dirname(cwd))
 sys.path.insert(1, cwd)
 logging.basicConfig()
