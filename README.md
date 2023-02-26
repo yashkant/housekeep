@@ -40,6 +40,9 @@ Use the following command to aggregate metrics across scenes and save the aggreg
 `<scene_names>` is a comma separated list of scene names. Set this to `ihlen_1_int,merom_1_int` when evaluating on val scenes and `beechwood_1_int,benevolence_1_int,ihlen_0_int,merom_0_int` when evaluating on test scenes.<br>
 Use `<subsplit>` (set to either `all`, `seen` or `unseen`) to indicate if the metrics are to be aggregated across all episodes or across only the episodes containing seen or unseen objects.
 
+## Evaluating object-room (OR) and object-room-receptacle (ORR) matching scores
+Use the `cos_eor/scripts/orm/evaluate_scores.py` script to evaluate your OR/ORR scores and to reproduce the mAP values reported in the paper.
+
 ## Citing
 
 If you find our work useful for your research, please consider citing:
