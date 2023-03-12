@@ -358,11 +358,11 @@ class HiePolicy:
         # decode task-sensor info
         observations["cos_eor"] = [dec_bytes2obj(obs) for obs in observations["cos_eor"]]
         self.update(observations)
-        self.rank_module.rerank(observations["cos_eor"][0], self.rec_rooms, self.objs, True)
+        # self.rank_module.rerank(observations["cos_eor"][0], self.rec_rooms, self.objs, True)
         self.explore_module.update(observations)
 
         # build new rearrangements
-        self.get_rearrangements()
+        # self.get_rearrangements()
         self.assert_consistency()
 
         # next-state
