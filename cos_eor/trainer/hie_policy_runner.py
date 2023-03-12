@@ -11,6 +11,10 @@ import numpy as np
 import numba
 import torch
 import tqdm
+import matplotlib.pyplot as plt
+
+from PIL import Image
+from habitat_sim.utils.common import d3_40_colors_rgb
 
 cwd = os.getcwd()
 pwd = os.path.dirname(cwd)
@@ -34,6 +38,37 @@ from cos_eor.env.env import CosRearrangementRLEnv
 from cos_eor.task.sensors import *
 from cos_eor.task.measures import *
 
+from PIL import Image
+import matplotlib.pyplot as plt
+def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([]), save_file=None):
+    from habitat_sim.utils.common import d3_40_colors_rgb
+
+    rgb_img = Image.fromarray(rgb_obs, mode="RGB")
+
+    arr = [rgb_img]
+    titles = ["rgb"]
+    if semantic_obs.size != 0:
+        semantic_img = Image.new("P", (semantic_obs.shape[1], semantic_obs.shape[0]))
+        semantic_img.putpalette(d3_40_colors_rgb.flatten())
+        semantic_img.putdata((semantic_obs.flatten() % 40).astype(np.uint8))
+        semantic_img = semantic_img.convert("RGBA")
+        arr.append(semantic_img)
+        titles.append("semantic")
+
+    if depth_obs.size != 0:
+        depth_img = Image.fromarray((depth_obs / 10 * 255).astype(np.uint8), mode="L")
+        arr.append(depth_img)
+        titles.append("depth")
+
+    plt.figure(figsize=(12, 8))
+    for i, data in enumerate(arr):
+        ax = plt.subplot(1, 3, i + 1)
+        ax.axis("off")
+        ax.set_title(titles[i])
+        plt.imshow(data)
+    # plt.show(block=False)
+    plt.savefig(save_file)
+    plt.close()
 class HiePolicyRunner(object):
     def __init__(self, config):
         self.config = config
@@ -209,6 +244,7 @@ class HiePolicyRunner(object):
         aggregated_stats = defaultdict(int)
         all_episode_stats = []
 
+        counter = 0
         with tqdm.tqdm(total=num_eps) as pbar:
             while len(all_episode_stats) < num_eps:
                 cur_episodes = self.envs.current_episodes()
@@ -217,7 +253,8 @@ class HiePolicyRunner(object):
                 outputs = self.envs.step(actions)
                 observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
                 batch = batch_obs(observations, device=self.device)
-
+                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'plots/ihlen_1_int/plot_{counter}.jpg')
+                counter+=1
                 num_dones = 0
                 for env_idx, done in enumerate(dones):
                     actions_buffer[env_idx].append(actions[env_idx]["action"]["action"])
