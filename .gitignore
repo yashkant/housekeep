@@ -2,3 +2,6 @@
 *.ipynb_checkpoints
 data/*
 logs/*
+plots/*
+protoc*.zip
+oracle-log.txt
