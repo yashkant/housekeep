@@ -13,6 +13,8 @@ import torch
 import tqdm
 import matplotlib.pyplot as plt
 
+import json
+
 from PIL import Image
 from habitat_sim.utils.common import d3_40_colors_rgb
 
@@ -40,6 +42,19 @@ from cos_eor.task.measures import *
 
 from PIL import Image
 import matplotlib.pyplot as plt
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([]), save_file=None):
     from habitat_sim.utils.common import d3_40_colors_rgb
 
@@ -69,6 +84,7 @@ def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([]), s
     # plt.show(block=False)
     plt.savefig(save_file)
     plt.close()
+
 class HiePolicyRunner(object):
     def __init__(self, config):
         self.config = config
@@ -253,7 +269,11 @@ class HiePolicyRunner(object):
                 outputs = self.envs.step(actions)
                 observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
                 batch = batch_obs(observations, device=self.device)
-                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'plots/ihlen_1_int/plot_{counter}.jpg')
+                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'plots/ihlen_1_int/plots/plot_{counter}.jpg')
+                dumped = json.dumps(observations, cls=NumpyEncoder)
+                with open(f'plots/ihlen_1_int/observations/obs_{counter}.json', 'w') as f:
+                    json.dump(dumped, f)
+
                 counter+=1
                 num_dones = 0
                 for env_idx, done in enumerate(dones):
