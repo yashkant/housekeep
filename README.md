@@ -24,6 +24,20 @@ Find the instructions for downloading object models from different sources and f
 
 The file `cos_eor/scripts/dump/scale_rots_all.npy` contains metadata information for the complete collection of object models. It includes the scales and rotations to use for placing these object models appropriately in the scenes.
 
+## Visuals
+
+The videos we showed to the participants for collecting annotations.
+- Objects: https://drive.google.com/drive/folders/1a8EEhi8eNE2nQYgB9UXLHoXS2a3pvhX0?usp=sharing
+- Receptacles: https://drive.google.com/drive/folders/1o5FJECH5OYEtR3y-d595ifYVzcNV_10g?usp=sharing
+
+Visualization of object models by source.
+- GSO: https://drive.google.com/drive/folders/1iyUUHqNnM1G6f7vbE15AbhmFWSr9JWAu?usp=sharing
+- ABO: https://drive.google.com/drive/folders/1Cut2N8FNxtGl0H0zqZWz_ShY8b7FZ29H?usp=sharing
+- ReplicaCAD: https://drive.google.com/drive/folders/18zOCV-VmdMXeUtKoWwUSGXc6CP2vVast?usp=share_link
+- iGibson: https://drive.google.com/drive/folders/1v_KgyHfigUmgX7wMCLmh5cR8q1-2cNyY?usp=share_link
+- YCB: https://drive.google.com/drive/folders/1G7-1NZ31K3WOlnis_iUmkfLcfhwG-GJ1?usp=share_link
+
+
 ## Running the baseline
 - Generate config files for running the experiments `./generate_configs.sh <exp_name> <explore_type> <rank_type>`
 `<explore_type>` is the type of exploration module to use: `phasic` or `oracle`
