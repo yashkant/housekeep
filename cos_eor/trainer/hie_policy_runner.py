@@ -71,7 +71,7 @@ def display_sample(rgb_obs, semantic_obs=np.array([]), depth_obs=np.array([]), s
         titles.append("semantic")
 
     if depth_obs.size != 0:
-        depth_img = Image.fromarray((depth_obs / 10 * 255).astype(np.uint8), mode="L")
+        depth_img = Image.fromarray((depth_obs/10 * 255).astype(np.uint8), mode="L")
         arr.append(depth_img)
         titles.append("depth")
 
@@ -263,15 +263,19 @@ class HiePolicyRunner(object):
         counter = 0
         with tqdm.tqdm(total=num_eps) as pbar:
             while len(all_episode_stats) < num_eps:
+                path = os.getenv('CSR_PATH', 'csr_raw/ihlen_1_int/baseline_1')
+                os.makedirs(path, exist_ok=True)
+                os.makedirs(os.path.join(path, 'plots'), exist_ok=True)
+                os.makedirs(os.path.join(path, 'observations'), exist_ok=True)
                 cur_episodes = self.envs.current_episodes()
                 actions, turn_measures = self.policy.act(batch)
                 states = self.policy.get_current_state()
                 outputs = self.envs.step(actions)
                 observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
                 batch = batch_obs(observations, device=self.device)
-                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'plots/ihlen_1_int/plots/plot_{counter}.jpg')
+                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'{path}/plots/plot_{counter}.jpg')
                 dumped = json.dumps(observations, cls=NumpyEncoder)
-                with open(f'plots/ihlen_1_int/observations/obs_{counter}.json', 'w') as f:
+                with open(f'{path}/observations/obs_{counter}.json', 'w') as f:
                     json.dump(dumped, f)
 
                 counter+=1

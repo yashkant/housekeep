@@ -2,6 +2,7 @@
 *.ipynb_checkpoints
 data/*
 logs/*
-plots/*
+csr_raw/*
 protoc*.zip
 oracle-log.txt
+*all_scenes_indices.pt

@@ -4,8 +4,9 @@ import numpy as np
 import torchvision
 import torch
 from tqdm import tqdm
+
 # Set the root directory where you want to start the script
-root_dir = './plots'
+root_dir = './csr_raw'
 
 # Walk through all subdirectories in the root directory
 for subdir, dirs, files in os.walk(root_dir):

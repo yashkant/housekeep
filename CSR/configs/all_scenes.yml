@@ -1,0 +1,25 @@
+project_name: 'contrastive'
+experiment_name: 'all_scenes'
+data_path: '/srv/flash1/gchhablani3/housekeep/csr_raw/beechwood_0_int/baseline_phasic_oracle/csr'
+checkpoint_path: 'tmp'
+seed: 0
+pretrained: false
+lr: 0.1
+weight_decay: 0.0001
+backbone: 'resnet18'
+channel_width: 64
+in_channels: 5
+out_channels: 0
+num_classes: 0
+optimizer: 'SGD'
+scheduler: 'CosineAnnealingLR'
+batch_size: 64
+epochs: 100
+progress_bar_refresh_rate: 20
+gpus:
+  - 0
+early_stop: false
+accelerator: 'ddp'
+pretrain_path: ''
+train_object_representation: false
+queue_size: 1024
