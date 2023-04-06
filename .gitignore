@@ -6,3 +6,4 @@ csr_raw/*
 protoc*.zip
 oracle-log.txt
 *.pt
+*wandb*

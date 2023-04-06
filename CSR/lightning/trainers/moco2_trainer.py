@@ -55,7 +55,7 @@ class MocoV2Trainer(object):
         trainer = pl.Trainer(max_epochs=self.conf.epochs,
                              check_val_every_n_epoch=5,
                              progress_bar_refresh_rate=self.conf.progress_bar_refresh_rate,
-                             gpus=8,#self.conf.gpus,
+                             gpus=self.conf.gpus,
                              logger=wandb_logger,
                              callbacks=[checkpoint_callback, learning_rate_callback, data_callback],
                              checkpoint_callback=True,

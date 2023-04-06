@@ -1,6 +1,6 @@
 project_name: 'contrastive'
 experiment_name: 'all_scenes'
-data_path: '/srv/flash1/gchhablani3/housekeep/csr_raw/beechwood_0_int/baseline_phasic_oracle/csr'
+data_path: '../'
 checkpoint_path: 'tmp'
 seed: 0
 pretrained: false
