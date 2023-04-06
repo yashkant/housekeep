@@ -31,9 +31,15 @@ class ContrastiveDataset(Dataset):
         else:
             mask = slice(len(self.iids)//2+len(self.iids)//4, len(self.iids))
         
-        self.current_iids = self.scenes_indices['iids'][mask]
+        self.mask = mask
+        self.current_iids = self.iids[mask]
+        # self.current_iids_indices = [self.iids.index(curr_id) for curr_id in self.current_iids]
+        # print(self.current_iids_indices)
+        # print(mask)
+        # print(len(self.current_iids))
         self.masked_scene_indices_arr = self.scenes_indices['arr'][mask, mask, :]
-
+        # print(self.masked_scene_indices_arr.shape)
+        # print(self.masked_scene_indices_arr.shape)
         num_of_scenes_per_iid_pair = np.sum(self.masked_scene_indices_arr, axis=-1)
 
         possible_pair_combinations = (num_of_scenes_per_iid_pair * (num_of_scenes_per_iid_pair - 1))/ 2
@@ -65,13 +71,12 @@ class ContrastiveDataset(Dataset):
      
             # Where in the array the files are there
             files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1).squeeze()
-            # print(files_list.shape)
             # Pairs of files containing the same object pairs
             files_pair_list = [[(i,j) for j in range(i+1,len(files_list))] for i in range(len(files_list))] 
             # Get the file pair 
             file_path_1 = self.masked_scene_indices_arr[obj_1, obj_2, files_pair_list[file_pair_index][0]]
             file_path_2 = self.masked_scene_indices_arr[obj_1, obj_2, files_pair_list[file_pair_index][1]]
-            # print(files_pair_list[file_pair_index])
+
         else:
             # negative sampling
             pos = False
@@ -91,15 +96,16 @@ class ContrastiveDataset(Dataset):
             files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1)
             # Pairs of files containing the same object pairs
             # Get the file pair 
-            file_path_1 = self.masked_scene_indices_arr[obj_1, obj_2, files_list[0]]
+            file_path_1 = self.masked_scene_indices_arr[obj_1, obj_2, random.choice(files_list)]
 
             # Second Sample
             # Get the total number of objects
             num_objs = len(self.current_iids)
             # Initialize neg_obj_1 and neg_obj_2 to None
             neg_obj_1 = neg_obj_2 = None
+            # TODO: Better way would be to sample negatives directly from pairs!
             # Loop until we get two objects that are not the same as obj_1 and obj_2, and not already present in neg_obj_1 and neg_obj_2
-            while neg_obj_1 is None or (neg_obj_1, neg_obj_2) == (obj_1, obj_2):
+            while neg_obj_1 is None or (neg_obj_1, neg_obj_2) == (obj_1, obj_2) or self.masked_scene_indices_arr[neg_obj_1, neg_obj_2].sum()==0:
                 # Randomly select two objects
                 neg_obj_1, neg_obj_2 = np.random.randint(num_objs, size=(2,))
             
@@ -123,9 +129,9 @@ class ContrastiveDataset(Dataset):
             item_obj_1 = [item for item in data_pair_file['items'] if item['iid']==self.current_iids[object_tuple[0]]]
             item_obj_2 = [item for item in data_pair_file['items'] if item['iid']==self.current_iids[object_tuple[1]]]
 
-            print(self.data_split, pos)
-            print([item['iid'] for item in data_pair_file['items']]) # All IIDs
-            print(self.current_iids[object_tuple[0]], self.current_iids[object_tuple[1]])
+            # print(self.data_split, pos)
+            # print([item['iid'] for item in data_pair_file['items']]) # All IIDs
+            # print(self.current_iids[object_tuple[0]], self.current_iids[object_tuple[1]])
             m1 = get_box(item_obj_1[0]['bounding_box'].reshape(2, 2))
             m2 = get_box(item_obj_2[0]['bounding_box'].reshape(2, 2))
 
