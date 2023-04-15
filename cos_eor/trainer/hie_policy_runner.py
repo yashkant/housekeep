@@ -273,10 +273,12 @@ class HiePolicyRunner(object):
                 outputs = self.envs.step(actions)
                 observations, rewards, dones, infos = [list(x) for x in zip(*outputs)]
                 batch = batch_obs(observations, device=self.device)
-                display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'{path}/plots/plot_{counter}.jpg')
-                dumped = json.dumps(observations, cls=NumpyEncoder)
-                with open(f'{path}/observations/obs_{counter}.json', 'w') as f:
-                    json.dump(dumped, f)
+                if counter%10 == 0:
+                    if len(np.unique(observations[0]['semantic'])) >= 2:
+                        # display_sample(observations[0]['rgb'], observations[0]['semantic'], observations[0]['depth'].squeeze(), f'{path}/plots/plot_{counter}.jpg')
+                        dumped = json.dumps(observations, cls=NumpyEncoder)
+                        with open(f'{path}/observations/obs_{counter}.json', 'w') as f:
+                            json.dump(dumped, f)
 
                 counter+=1
                 num_dones = 0

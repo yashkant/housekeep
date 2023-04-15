@@ -87,17 +87,17 @@ class ContrastiveImagePredictionLogger(Callback):
         q_img = query['image']
         q_mask_1 = query['mask_1']
         q_mask_2 = query['mask_2']
-        q_rooms_ids = query['room_id']
-        q_trajectory_ids = query['trajectory_id'].cpu().numpy()
-        q_timesteps = query['timestep'].cpu().numpy()
+        # q_rooms_ids = query['room_id']
+        # q_trajectory_ids = query['trajectory_id'].cpu().numpy()
+        # q_timesteps = query['timestep'].cpu().numpy()
         # has_shuffle_negatives = query['has_shuffle_negative'].cpu().numpy()
 
         k_img = key['image']
         k_mask_1 = key['mask_1']
         k_mask_2 = key['mask_2']
-        k_rooms_ids = key['room_id']
-        k_trajectory_ids = key['trajectory_id'].cpu().numpy()
-        k_timesteps = key['timestep'].cpu().numpy()
+        # k_rooms_ids = key['room_id']
+        # k_trajectory_ids = key['trajectory_id'].cpu().numpy()
+        # k_timesteps = key['timestep'].cpu().numpy()
 
         # s_img = query['shuffle_image']
         # s_mask_1 = query['shuffle_mask_1']
@@ -150,18 +150,10 @@ class ContrastiveImagePredictionLogger(Callback):
         # } for i in range(s_img.shape[0])]
 
         trainer.logger.experiment.log({
-            f"{prefix}_queries": [wandb.Image(x, masks=mask, caption=f"room_id:{room_id}, trajectory_id:{trajectory_id}, timestep:{timestep}")
-                                  for x, mask, room_id, trajectory_id, timestep in zip(q_img,
-                                                                                       q_masks,
-                                                                                       q_rooms_ids,
-                                                                                       q_trajectory_ids,
-                                                                                       q_timesteps)][:10],
-            f"{prefix}_keys": [wandb.Image(x, masks=mask, caption=f"room_id:{room_id}, trajectory_id:{trajectory_id}, timestep:{timestep}")
-                               for x, mask, room_id, trajectory_id, timestep in zip(k_img,
-                                                                                    k_masks,
-                                                                                    k_rooms_ids,
-                                                                                    k_trajectory_ids,
-                                                                                    k_timesteps)][:10],
+            f"{prefix}_queries": [wandb.Image(x, masks=mask, caption=f"img")
+                                  for x, mask in zip(q_img, q_masks)][:10],
+            f"{prefix}_keys": [wandb.Image(x, masks=mask, caption=f"img")
+                               for x, mask in zip(k_img,k_masks)][:10],
         })
 
 
@@ -194,9 +186,9 @@ class ReceptacleImagePredictionLogger(Callback):
             image = val_input['image'][indices]
             mask_1 = val_input['mask_1'][indices]
             mask_2 = val_input['mask_2'][indices]
-            rooms_id = val_input['room_id'][indices]
-            trajectory_id = val_input['trajectory_id'][indices]
-            timestep = val_input['timestep'][indices]
+            # rooms_id = val_input['room_id'][indices]
+            # trajectory_id = val_input['trajectory_id'][indices]
+            # timestep = val_input['timestep'][indices]
 
             # Save the masks
             masks += [{

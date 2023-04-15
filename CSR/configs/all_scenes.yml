@@ -13,11 +13,12 @@ out_channels: 0
 num_classes: 0
 optimizer: 'SGD'
 scheduler: 'CosineAnnealingLR'
-batch_size: 64
-epochs: 100
+batch_size: 256
+epochs: 20
 progress_bar_refresh_rate: 20
 gpus:
   - 0
+  - 1
 early_stop: false
 accelerator: 'ddp'
 pretrain_path: ''

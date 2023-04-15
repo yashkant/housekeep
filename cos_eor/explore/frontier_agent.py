@@ -35,6 +35,7 @@ class FrontierAgent:
         self.seed = seed
         self._rng = random.Random(seed)
         self._time_elapsed_for_target = 0
+        self.total_time_elapsed = 0
         self._failure_count = 0
         self.use_contour_sampling = use_contour_sampling
         self.env_name = env_name
@@ -126,6 +127,7 @@ class FrontierAgent:
                     action = self.action_space["stop"]
 
         self._time_elapsed_for_target += 1
+        self.total_time_elapsed += 1
 
         return action
 
@@ -208,6 +210,7 @@ class FrontierAgent:
                 np.clip(tgt[0], 1, self.map_size - 2).item(),
             )  # (x, y)
         else:
+            print("Going for a new target at time elapsed: ", self.total_time_elapsed)
             self.frontier_target = (self.map_size // 2 + 4, self.map_size // 2 + 4)
 
         if self.show_animation:

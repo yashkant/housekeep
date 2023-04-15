@@ -22,13 +22,13 @@ BASE_TASK_CONFIG:
       ENABLE_PHYSICS: True
       PHYSICS_CONFIG_FILE: "./data/default.physics_config.json"
     RGB_SENSOR:
-      WIDTH: 256
-      HEIGHT: 256
+      WIDTH: 512
+      HEIGHT: 512
       HFOV: 90
       POSITION: [ 0, 1.5, 0 ]
     SEMANTIC_SENSOR:
-      WIDTH: 256
-      HEIGHT: 256
+      WIDTH: 512
+      HEIGHT: 512
       HFOV: 90
       POSITION: [ 0, 1.5, 0 ]
     # added only by debug argument, when running
@@ -38,8 +38,8 @@ BASE_TASK_CONFIG:
       HFOV: 90
       POSITION: [ 0, 1.5, 0.88 ]
     DEPTH_SENSOR:
-      WIDTH: 256
-      HEIGHT: 256
+      WIDTH: 512
+      HEIGHT: 512
       HFOV: 90
       MIN_DEPTH: 0.5
       MAX_DEPTH: 5.0
