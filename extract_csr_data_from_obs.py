@@ -10,9 +10,13 @@ root_dir = './csr_raw'
 
 # Walk through all subdirectories in the root directory
 for subdir, dirs, files in os.walk(root_dir):
+    if len(subdir.split('/')) >=3 and subdir.split('/')[-3] in ["rs_int", "pomaria_2_int", "wainscott_0_int", "merom_0_int", "pomaria_0_int"]:
+        print("Skipping ", subdir.split('/')[-3])
+        continue
     # Check if the subdirectory has any obs_{idx}.json files
     obs_files = [f for f in files if f.startswith('obs_') and f.endswith('.json')]
     if len(obs_files) > 0:
+        print("Working on ", subdir.split('/')[-3])
         # Create the 'csr' directory in the second parent of the subdirectory
         parent_dir = os.path.dirname(subdir)
         csr_dir = os.path.join(parent_dir, 'csr')
