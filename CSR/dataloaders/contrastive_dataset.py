@@ -26,13 +26,16 @@ class ContrastiveDataset(Dataset):
 
         if data_split == 1:
             # mask = slice(0, len(self.iids)//2)
-            mask = slice(0, 5)
+            mask = slice(0, 10)
+            self.len = 50000
         elif data_split == 2:
             # mask = slice(len(self.iids)//2, len(self.iids)//2+len(self.iids)//4)
-            mask = slice(5, 6)
+            mask = slice(8, 12)
+            self.len = 5000
         else:
             # mask = slice(len(self.iids)//2+len(self.iids)//4, len(self.iids))
-            mask = slice(5, 7)
+            mask = slice(12, 14)
+            self.len = 5000
         
         mask = slice(0, len(self.iids))
         self.mask = mask
@@ -58,12 +61,12 @@ class ContrastiveDataset(Dataset):
         assert self.transform is not None
 
     def __len__(self):
-        return math.floor(self.total_pairs[-1, -1]/self.pos_to_neg_ratio)
+        return self.len * 2 #math.floor(self.total_pairs[-1, -1]/self.pos_to_neg_ratio)
 
     def __getitem__(self, idx):
 
         # if random.random() < self.pos_to_neg_ratio:
-        if idx < math.floor(self.total_pairs[-1, -1]):
+        if idx < self.len: # math.floor(self.total_pairs[-1, -1]):
             assert idx < math.floor(self.total_pairs[-1, -1])
             pos = True
             # Get the pair at that index
@@ -160,7 +163,7 @@ class ContrastiveDataset(Dataset):
         for file_path_idx, object_tuple in zip([file_path_1, file_path_2],[(obj_1, obj_2), (path_2_obj_1, path_2_obj_2)]):
             # print(self.data_split, pos, file_path_idx)
             file_path = self.scenes_indices['files'][file_path_idx]
-            with open(os.path.join('/srv/flash1/gchhablani3/housekeep/csr_raw/beechwood_0_int/baseline_phasic_oracle/csr', file_path.split('|')[-1])) as f:
+            with open(os.path.join('/srv/flash1/gchhablani3/housekeep/csr_raw/ihlen_1_int/baseline_phasic_oracle/csr', file_path.split('|')[-1])) as f:
                 data_pair_file = json.load(f)
             item_obj_1 = [item for item in data_pair_file['items'] if item['iid']==self.current_iids[object_tuple[0]]]
             item_obj_2 = [item for item in data_pair_file['items'] if item['iid']==self.current_iids[object_tuple[1]]]

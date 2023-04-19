@@ -5,8 +5,8 @@ import torch
 from tqdm import tqdm
 
 csr_dir = os.getcwd()
-scenes_all = os.listdir('./csr_raw') # csr_raw/[scene]/[algorithm]
-
+# scenes_all = os.listdir('./csr_raw') # csr_raw/[scene]/[algorithm]
+scenes_all = ['ihlen_1_int']
 iid_frame_dict = {}
 iids = []
 

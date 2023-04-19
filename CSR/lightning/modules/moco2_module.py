@@ -90,7 +90,12 @@ class MocoV2(pl.LightningModule):
         for param_q, param_k in zip(self.encoder_q.parameters(), self.encoder_k.parameters()):
             param_k.data.copy_(param_q.data)  # initialize
             param_k.requires_grad = False  # not update by gradient
-
+        
+        for param in self.encoder_q[0].resnet.parameters():
+            param.requires_grad = False
+        for param in self.encoder_k[0].resnet.parameters():
+            param.requires_grad = False
+            
         # create the queue
         self.register_buffer("queue_edge", torch.randn(emb_dim, num_negatives))
         self.queue_edge = nn.functional.normalize(self.queue_edge, dim=0)
@@ -111,13 +116,13 @@ class MocoV2(pl.LightningModule):
         backbone_q = FeatureLearner(
             in_channels=5,
             channel_width=64,
-            pretrained=False,
+            pretrained=True,
             num_classes=self.hparams.emb_dim,
             backbone_str='resnet18')
         backbone_k = FeatureLearner(
             in_channels=5,
             channel_width=64,
-            pretrained=False,
+            pretrained=True,
             num_classes=self.hparams.emb_dim,
             backbone_str='resnet18')
 

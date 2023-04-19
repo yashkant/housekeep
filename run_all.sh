@@ -6,10 +6,10 @@ experiment="baseline_phasic_oracle"
 # List of names
 # names=("pomaria_2_int" "merom_1_int")
 # names=("pomaria_0_int" "pomaria_1_int")
-
+names=("pomaria_2_int" "wainscott_0_int" "merom_0_int" "pomaria_0_int")
 # Iterate through the list of names
-# for file in "${names[@]}";
-for file in /srv/flash1/gchhablani3/housekeep/logs/"$experiment"/configs/*.yaml
+for file in "${names[@]}";
+# for file in /srv/flash1/gchhablani3/housekeep/logs/"$experiment"/configs/*.yaml
 # for file in $(ls -r /srv/flash1/gchhablani3/housekeep/logs/"$experiment"/configs/*.yaml)
 do
     name=$(basename "$file" .yaml)

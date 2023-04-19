@@ -1,26 +1,23 @@
 project_name: 'contrastive'
 experiment_name: 'all_scenes'
 data_path: '../'
-checkpoint_path: 'tmp'
+checkpoint_path: 'tmp-april18-1024'
 seed: 0
 pretrained: false
-lr: 0.001
+lr: 0.1
 weight_decay: 0.0001
 backbone: 'resnet18'
 channel_width: 64
 in_channels: 5
 out_channels: 0
 num_classes: 0
-optimizer: 'Adam'
+optimizer: 'SGD'
 scheduler: 'CosineAnnealingLR'
-batch_size: 256
+batch_size: 128
 epochs: 20
-progress_bar_refresh_rate: 
+progress_bar_refresh_rate: 20
 gpus:
   - 0
-  - 1
-  - 2
-  - 3
 early_stop: false
 accelerator: 'ddp'
 pretrain_path: ''
