@@ -61,104 +61,103 @@ class ContrastiveDataset(Dataset):
         assert self.transform is not None
 
     def __len__(self):
-        return self.len * 2 #math.floor(self.total_pairs[-1, -1]/self.pos_to_neg_ratio)
+        return self.len #math.floor(self.total_pairs[-1, -1]/self.pos_to_neg_ratio)
 
     def __getitem__(self, idx):
 
         # if random.random() < self.pos_to_neg_ratio:
-        if idx < self.len: # math.floor(self.total_pairs[-1, -1]):
-            assert idx < math.floor(self.total_pairs[-1, -1])
-            pos = True
-            # Get the pair at that index
-            if (idx < self.total_pairs[0, 0]):
-                obj_1, obj_2 = 0, 0
-                prev_obj_1, prev_obj_2 = None, None
-                file_pair_index = idx
-            else:
-                try:
-                    obj_1, obj_2 = np.argwhere(self.total_pairs > idx)[0]
-                except:
-                    print(idx, self.total_pairs[0, 0], self.total_pairs[-1, -1])
-                    raise()
-                # Get the pair at the previous (this helps us get the start of range of indices which has obj_1 and obj_2)
-                prev_obj_1, prev_obj_2 = np.argwhere(self.total_pairs <= idx)[-1]
-                # Gives us index in the files list for current pair
-                file_pair_index = int(idx - self.total_pairs[prev_obj_1, prev_obj_2])
-     
-            # Where in the array the files are there
-            files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1).reshape(-1)
-            # Pairs of files containing the same object pairs
-            files_pair_list = [[(i,j) for j in range(i+1,len(files_list))] for i in range(len(files_list))]
-            files_pair_list_flatten = []
-            for item in files_pair_list:
-                files_pair_list_flatten += item
-            # Get the file pair
-
-            if prev_obj_1 is not None:
-                assert len(files_pair_list_flatten) == self.total_pairs[obj_1, obj_2] - self.total_pairs[prev_obj_1, prev_obj_2]
-            else:
-                assert len(files_pair_list_flatten) == self.total_pairs[obj_1, obj_2]
-            assert file_pair_index < len(files_pair_list_flatten), f"Obj 1: {obj_1}, Obj 2: {obj_2}, Prev Obj 1: {prev_obj_1}, Prev Obj 2: {prev_obj_2}, File List Len: {len(files_list)}, File Pair Index: {file_pair_index}, File Pair List Flatten: {len(files_pair_list_flatten)}"
-            file_path_1 = files_list[files_pair_list_flatten[file_pair_index][0]]
-            file_path_2 = files_list[files_pair_list_flatten[file_pair_index][1]]
-
-            assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_1] == 1, "File Path 1 does not include objects"
-            assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_2] == 1, "File Path 2 does not include objects"
-
+        # if idx < self.len: # math.floor(self.total_pairs[-1, -1]):
+        assert idx < math.floor(self.total_pairs[-1, -1])
+        # Get the pair at that index
+        if (idx < self.total_pairs[0, 0]):
+            obj_1, obj_2 = 0, 0
+            prev_obj_1, prev_obj_2 = None, None
+            file_pair_index = idx
         else:
-            idx = idx % int(self.total_pairs[-1, 1])
-            # negative sampling
-            pos = False
-            # First Sample
-            # Get the pair at that index
-            if (idx < self.total_pairs[0, 0]):
-                obj_1, obj_2 = 0, 0
-                file_pair_index = idx
-            else:
-                try:
-                    obj_1, obj_2 = np.argwhere(self.total_pairs > idx)[0]
-                except:
-                    print(idx, self.total_pairs[0, 0], self.total_pairs[-1, -1])
-                    raise()
-                # Get the pair at the previous (this helps us get the start of range of indices which has obj_1 and obj_2)
-                prev_obj_1, prev_obj_2 = np.argwhere(self.total_pairs <= idx)[-1]
-                # Gives us index in the files list for current pair
-                file_pair_index = idx - self.total_pairs[prev_obj_1, prev_obj_2]
-            
-            # Where in the array the files are there
-            files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1).reshape(-1)
-            # Pairs of files containing the same object pairs
-            # Get the file pair 
-            file_path_1 = random.choice(files_list)
+            try:
+                obj_1, obj_2 = np.argwhere(self.total_pairs > idx)[0]
+            except:
+                print(idx, self.total_pairs[0, 0], self.total_pairs[-1, -1])
+                raise()
+            # Get the pair at the previous (this helps us get the start of range of indices which has obj_1 and obj_2)
+            prev_obj_1, prev_obj_2 = np.argwhere(self.total_pairs <= idx)[-1]
+            # Gives us index in the files list for current pair
+            file_pair_index = int(idx - self.total_pairs[prev_obj_1, prev_obj_2])
+    
+        # Where in the array the files are there
+        files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1).reshape(-1)
+        # Pairs of files containing the same object pairs
+        files_pair_list = [[(i,j) for j in range(i+1,len(files_list))] for i in range(len(files_list))]
+        files_pair_list_flatten = []
+        for item in files_pair_list:
+            files_pair_list_flatten += item
+        # Get the file pair
 
-            # Second Sample
-            # Get the total number of objects
-            num_objs = len(self.current_iids)
-            # Initialize neg_obj_1 and neg_obj_2 to None
-            neg_obj_1 = neg_obj_2 = None
-            # TODO: Better way would be to sample negatives directly from pairs!
-            # Loop until we get two objects that are not the same as obj_1 and obj_2, and not already present in neg_obj_1 and neg_obj_2
-            while neg_obj_1 is None or (neg_obj_1, neg_obj_2) == (obj_1, obj_2) or self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, :].sum()==0:
-                # Randomly select two objects
-                neg_obj_1, neg_obj_2 = np.random.randint(num_objs, size=(2,))
-            
-            # Where in the array the files are there for neg_obj_1 and neg_obj_2
-            neg_files_list = np.argwhere(self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, :] == 1).reshape(-1)
-            # Get the file pair
-            # print(neg_files_list, type(neg_files_list))
-            # print(len(neg_files_list))
-            file_path_2 = random.choice(neg_files_list)
+        if prev_obj_1 is not None:
+            assert len(files_pair_list_flatten) == self.total_pairs[obj_1, obj_2] - self.total_pairs[prev_obj_1, prev_obj_2]
+        else:
+            assert len(files_pair_list_flatten) == self.total_pairs[obj_1, obj_2]
+        assert file_pair_index < len(files_pair_list_flatten), f"Obj 1: {obj_1}, Obj 2: {obj_2}, Prev Obj 1: {prev_obj_1}, Prev Obj 2: {prev_obj_2}, File List Len: {len(files_list)}, File Pair Index: {file_pair_index}, File Pair List Flatten: {len(files_pair_list_flatten)}"
+        file_path_1 = files_list[files_pair_list_flatten[file_pair_index][0]]
+        file_path_2 = files_list[files_pair_list_flatten[file_pair_index][1]]
 
-            assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_1] == 1, "File Path 1 does not include objects"
-            assert self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, file_path_2] == 1, "File Path 2 does not include objects"
+        assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_1] == 1, "File Path 1 does not include objects"
+        assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_2] == 1, "File Path 2 does not include objects"
+
+        # else:
+        #     idx = idx % int(self.total_pairs[-1, 1])
+        #     # negative sampling
+        #     pos = False
+        #     # First Sample
+        #     # Get the pair at that index
+        #     if (idx < self.total_pairs[0, 0]):
+        #         obj_1, obj_2 = 0, 0
+        #         file_pair_index = idx
+        #     else:
+        #         try:
+        #             obj_1, obj_2 = np.argwhere(self.total_pairs > idx)[0]
+        #         except:
+        #             print(idx, self.total_pairs[0, 0], self.total_pairs[-1, -1])
+        #             raise()
+        #         # Get the pair at the previous (this helps us get the start of range of indices which has obj_1 and obj_2)
+        #         prev_obj_1, prev_obj_2 = np.argwhere(self.total_pairs <= idx)[-1]
+        #         # Gives us index in the files list for current pair
+        #         file_pair_index = idx - self.total_pairs[prev_obj_1, prev_obj_2]
+            
+        #     # Where in the array the files are there
+        #     files_list = np.argwhere(self.masked_scene_indices_arr[obj_1, obj_2, :] == 1).reshape(-1)
+        #     # Pairs of files containing the same object pairs
+        #     # Get the file pair 
+        #     file_path_1 = random.choice(files_list)
+
+        #     # Second Sample
+        #     # Get the total number of objects
+        #     num_objs = len(self.current_iids)
+        #     # Initialize neg_obj_1 and neg_obj_2 to None
+        #     neg_obj_1 = neg_obj_2 = None
+        #     # TODO: Better way would be to sample negatives directly from pairs!
+        #     # Loop until we get two objects that are not the same as obj_1 and obj_2, and not already present in neg_obj_1 and neg_obj_2
+        #     while neg_obj_1 is None or (neg_obj_1, neg_obj_2) == (obj_1, obj_2) or self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, :].sum()==0:
+        #         # Randomly select two objects
+        #         neg_obj_1, neg_obj_2 = np.random.randint(num_objs, size=(2,))
+            
+        #     # Where in the array the files are there for neg_obj_1 and neg_obj_2
+        #     neg_files_list = np.argwhere(self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, :] == 1).reshape(-1)
+        #     # Get the file pair
+        #     # print(neg_files_list, type(neg_files_list))
+        #     # print(len(neg_files_list))
+        #     file_path_2 = random.choice(neg_files_list)
+
+        #     assert self.masked_scene_indices_arr[obj_1, obj_2, file_path_1] == 1, "File Path 1 does not include objects"
+        #     assert self.masked_scene_indices_arr[neg_obj_1, neg_obj_2, file_path_2] == 1, "File Path 2 does not include objects"
 
 
         data_pair = []
 
-        if pos:
-            path_2_obj_1, path_2_obj_2 = obj_1, obj_2
-        else:
-            path_2_obj_1, path_2_obj_2 = neg_obj_1, neg_obj_2
+        # if pos:
+        path_2_obj_1, path_2_obj_2 = obj_1, obj_2
+        # else:
+        #     path_2_obj_1, path_2_obj_2 = neg_obj_1, neg_obj_2
 
         for file_path_idx, object_tuple in zip([file_path_1, file_path_2],[(obj_1, obj_2), (path_2_obj_1, path_2_obj_2)]):
             # print(self.data_split, pos, file_path_idx)
@@ -189,7 +188,7 @@ class ContrastiveDataset(Dataset):
             data = {'mask_1': m1,
                     'mask_2': m2, 
                     'image': Image.fromarray(np.array(data_pair_file['rgb'], dtype=np.uint8)),
-                    'is_self_feature': pos}
+                    'is_self_feature': object_tuple[0]==object_tuple[1]}
             self.transform(data)
         
             data_pair.append(data)
