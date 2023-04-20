@@ -16,8 +16,7 @@ def train(conf_path):
     conf = OmegaConf.load(conf_path)
     print(OmegaConf.to_yaml(conf))
 
-    if not os.path.exists(conf.checkpoint_path):
-        os.mkdir(conf.checkpoint_path)
+    os.makedirs(conf.checkpoint_path, exist_ok=True)
 
     rt = MocoV2Trainer(conf)
     rt.run()

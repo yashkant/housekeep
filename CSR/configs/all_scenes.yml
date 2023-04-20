@@ -16,13 +16,7 @@ scheduler: 'CosineAnnealingLR'
 batch_size: 256
 epochs: 20
 progress_bar_refresh_rate: 
-gpus:
-  - 0
-  - 1
-  - 2
-  - 3
 early_stop: false
 accelerator: 'ddp'
 pretrain_path: ''
-train_object_representation: false
 queue_size: 1024

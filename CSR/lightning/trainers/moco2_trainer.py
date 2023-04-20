@@ -23,7 +23,7 @@ class MocoV2Trainer(object):
 
     def run(self):
         # Init our data pipeline
-        dm = ContrastiveDataModule(self.conf.batch_size, self.conf.data_path, self.conf.train_object_representation)
+        dm = ContrastiveDataModule(self.conf.batch_size, self.conf.data_path)
 
         # To access the x_dataloader we need to call prepare_data and setup.
         dm.prepare_data()
@@ -54,15 +54,15 @@ class MocoV2Trainer(object):
         # set up the trainer
         trainer = pl.Trainer(max_epochs=self.conf.epochs,
                              check_val_every_n_epoch=5,
-                             progress_bar_refresh_rate=self.conf.progress_bar_refresh_rate,
-                             gpus=self.conf.gpus,
+                             gpus=torch.cuda.device_count(),
                              logger=wandb_logger,
                              callbacks=[checkpoint_callback, learning_rate_callback, data_callback],
                              checkpoint_callback=True,
                              accelerator=self.conf.accelerator,
                              plugins=DDPPlugin(find_unused_parameters=False),
                              amp_level='O2',
-                             precision=16)
+                             precision=16,
+                             num_sanity_val_steps=0)
 
         # Train the model
         trainer.fit(model, dm)
