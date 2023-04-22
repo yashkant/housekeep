@@ -1,0 +1,26 @@
+project_name: 'contrastive'
+experiment_name: 'all_scenes'
+data_path: '/srv/rail-lab/flash5/kvr6/dev/data/csr'
+checkpoint_path: 'tmp'
+model_lite: True # using MovoV2Lite that does not load resnet
+seed: 0
+pretrained: true
+lr: 0.1
+weight_decay: 0.0001
+backbone: 'resnet18'
+channel_width: 64
+in_channels: 5
+out_channels: 0
+num_classes: 0
+optimizer: 'SGD'
+scheduler: 'CosineAnnealingLR'
+batch_size: 16
+epochs: 20
+progress_bar_refresh_rate: 20
+gpus:
+  - 0
+early_stop: false
+accelerator: 'ddp'
+pretrain_path: ''
+train_object_representation: false
+queue_size: 256
