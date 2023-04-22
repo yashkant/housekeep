@@ -20,7 +20,7 @@ class ContrastiveDataset(Dataset):
     def __init__(self, root_dir, transform, data_split: DataSplit):
         # set the root directory
         self.root_dir = root_dir
-        self.scenes_indices = torch.load(os.path.join(root_dir, '..', 'all_scenes_indices.pt'))
+        self.scenes_indices = torch.load(os.path.join(root_dir, 'all_scenes_indices.pt'))
         self.iids = self.scenes_indices['iids']
         self.data_split = data_split
 
@@ -45,10 +45,11 @@ class ContrastiveDataset(Dataset):
         self.indexed_data = []
         for o1 in range(len(self.current_iids)):
             for o2 in range(len(self.current_iids)):
-                files = np.argwhere(self.masked_scene_indices_arr[o1,o2,:] == 1).reshape(-1)
+                files = np.argwhere(self.masked_scene_indices_arr[o1,o2,:][0] == 1).reshape(-1)
                 for i,f1 in enumerate(files):
                     for f2 in files[i+1:]:
-                        self.indexed_data.append((o1, o2, f1, f2))
+                        if f1.split('|')[0] == f2.split('|')[0]: # positive pairs must come from the same scene and episode
+                            self.indexed_data.append((o1, o2, f1, f2)) # all positive pairs
        
         self.length = len(self.indexed_data)
 
@@ -62,43 +63,25 @@ class ContrastiveDataset(Dataset):
     def __getitem__(self, idx):
         obj_1, obj_2, file_path_1, file_path_2 = self.indexed_data[idx]
 
-        file_dict = lambda fp: json.load(open(os.path.join(self.root_dir, 
-                                                        fp.split('|')[0], 
-                                                        'baseline_phasic_oracle',
-                                                        'csr',
-                                                        fp.split('|')[1])))
+        file_dict_resnet = \
+            lambda fp: torch.load(open(os.path.join(self.root_dir, 
+                                        fp.split('|')[0], 
+                                        'baseline_phasic_oracle',
+                                        'resnet',
+                                        '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.pt')))))
 
         data_pair = []
-        for file_path_idx in [file_path_1, file_path_2]:
-            data_dict = file_dict(self.scenes_indices['files'][file_path_idx])
-            item_obj_1 = [item for item in data_dict['items'] if item['iid']==self.current_iids[obj_1]]
-            item_obj_2 = [item for item in data_dict['items'] if item['iid']==self.current_iids[obj_2]]
-           
-            # TODO: Improve margins here. Should depend on crop size.
-            xmin, ymin, xmax, ymax = item_obj_1[0]['bounding_box']
-            box_1 = np.array([[max(xmin-5, 0), max(ymin-5, 0)], [min(xmax+5+1, 255), min(ymax+5+1, 255)]])
-            m1 = get_box(box_1)
+        for file_path_tuple in [file_path_1, file_path_2]:
 
-            xmin, ymin, xmax, ymax = item_obj_2[0]['bounding_box']
-            box_2 = np.array([[max(xmin-5, 0), max(ymin-5, 0)], [min(xmax+5+1, 255), min(ymax+5+1, 255)]])
-            m2 = get_box(box_2)
+            print(f'file tuple: {file_path_tuple}')
 
-            # print(box_1)
-            # plt.imsave('m1.jpg', m1.squeeze().numpy())
-            # plt.imsave('img.jpg', np.array(data_pair_file['rgb'], dtype=np.uint8))
-            # # print(m1.squeeze().shape, np.array(data_pair_file['rgb']).shape)
-            # rgb_image = np.array(data_pair_file['rgb'], dtype=np.uint8)
-            # plt.imsave('img_crop.jpg', rgb_image[box_1[0][1]:box_1[1][1], box_1[0][0]:box_1[1][0], :])
+            file_path_idx = file_path_tuple[0] # file_path_tuple = (fidx, bb1, bb2)
+            tensor_data = file_dict_resnet(self.scenes_indices['files'][file_path_idx])
 
-            # time.sleep(10)
-            data = {'mask_1': m1,
-                    'mask_2': m2, 
-                    'image': Image.fromarray(np.array(data_dict['rgb'], dtype=np.uint8)),
-                    'is_self_feature': obj_1==obj_2,
-                    }
-            self.transform(data)
+            print(f'shape of resnet tensor: {tensor_data.size()}')
+            input('wait')
         
-            data_pair.append(data)
+            data_pair.append(tensor_data)
 
         # create dict and return
         return data_pair[0], data_pair[1]
