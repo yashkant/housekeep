@@ -15,9 +15,22 @@ root_dir = './csr_raw'
 # rs_int 4905 4905
 # ihlen_1_int 4035 4035
 # wainscott_0_int 4793 4793
+# benevolence_1_int
+# beechwood_1_int
+# merom_0_int
 
 
-include_scene_names = ['benevolence_1_int', 'pomario_0_int', 'beechwood_1_int', 'merom_0_int']
+# for fil in os.listdir('csr_raw'):
+#     if os.path.exists(os.path.join('csr_raw', fil, 'baseline_phasic_oracle', 'csr')):
+#         print(fil, len(os.listdir(os.path.join('csr_raw', fil, 'baseline_phasic_oracle', 'observations'))), len(os.listdir(os.path.join('csr_raw', fil, 'baseline_phasic_oracle', 'csr'))))
+
+
+
+# for fil in os.listdir('csr_raw'):
+#     print(fil, len(os.listdir(os.path.join('csr_raw', fil, 'baseline_phasic_oracle', 'observations'))))
+
+
+include_scene_names = ['pomaria_2_int', 'pomaria_0_int', 'wainscott_1_int', 'ihlen_0_int']
 # Walk through all subdirectories in the root directory
 for subdir, dirs, files in os.walk(root_dir):
     # beechwood_0_int
