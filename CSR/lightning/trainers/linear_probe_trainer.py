@@ -9,8 +9,8 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.seed import seed_everything
 from lightning.data_modules.receptacle_data_module import \
     ReceptacleDataModule
-from lightning.modules.linear_probe_module import LinearProbeModule
-from lightning.custom_callbacks import ConfusionLogger, ReceptacleImagePredictionLogger
+from lightning.modules.feature_decoder_module import FeatureDecoderModule
+from lightning.custom_callbacks import ConfusionLogger
 
 
 class LinearProbeTrainer(object):
@@ -21,14 +21,14 @@ class LinearProbeTrainer(object):
 
     def run(self):
         # Init our data pipeline
-        dm = ReceptacleDataModule(self.conf.batch_size, self.conf.data_path, self.conf.task)
+        dm = ReceptacleDataModule(self.conf.batch_size, self.conf.data_path, self.conf.checkpoint_path)
 
         # To access the x_dataloader we need to call prepare_data and setup.
         dm.prepare_data()
         dm.setup()
 
         # Init our model
-        model = LinearProbeModule(self.conf)
+        model = FeatureDecoderModule()
 
         wandb_logger = WandbLogger(project=self.conf.project_name,
                                    name=self.conf.experiment_name,
@@ -36,14 +36,12 @@ class LinearProbeTrainer(object):
 
         # defining callbacks
         checkpoint_callback = ModelCheckpoint(dirpath=self.conf.checkpoint_path,
-                                              filename='model/model-{epoch}-{val_acc:.2f}',
+                                              filename='edge_pred/model-{epoch}-{val_acc:.2f}',
                                               verbose=True,
                                               monitor='val_loss',
                                               mode='min',
                                               every_n_val_epochs=5)
         learning_rate_callback = LearningRateMonitor(logging_interval='epoch')
-
-        input_callback = ReceptacleImagePredictionLogger()
 
         confusion_callback = ConfusionLogger(self.conf.classes)
 
@@ -55,7 +53,6 @@ class LinearProbeTrainer(object):
                              logger=wandb_logger,
                              callbacks=[learning_rate_callback,
                                         checkpoint_callback,
-                                        input_callback,
                                         confusion_callback],
                              checkpoint_callback=True)
 

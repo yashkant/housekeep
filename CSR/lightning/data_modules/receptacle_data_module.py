@@ -1,3 +1,4 @@
+import os
 import pytorch_lightning as pl
 import dataloaders.augmentations as A
 from dataloaders.receptacle_dataset import ReceptacleDataset
@@ -11,12 +12,16 @@ from torch.utils.data import DataLoader
 
 
 class ReceptacleDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, data_dir, task, drop_last=True):
+    def __init__(self, batch_size, data_dir, csr_ckpt_dir, drop_last=True):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.drop_last = drop_last
-        self.task = task
+        csr_ckpt_dir = os.path.join(csr_ckpt_dir, 'model')
+        best_ckpt = [f for f in os.listdir(csr_ckpt_dir) if f.endswith('.ckpt')]
+        best_ckpt.sort(key=lambda x: float(x.split('.')[0].split('-')[-1]), reverse=True)
+        best_ckpt = best_ckpt[0]
+        self.csr_ckpt_path = os.path.join(csr_ckpt_dir, best_ckpt)
 
     def prepare_data(self):
         pass
@@ -25,14 +30,14 @@ class ReceptacleDataModule(pl.LightningDataModule):
         # Assign train/val datasets for use in dataloaders
         if stage == 'fit' or stage is None:
             self.train_set = ReceptacleDataset(
-                self.data_dir, A.TrainTransform, DataSplit.TRAIN, task=self.task)
+                self.data_dir, A.TrainTransform, DataSplit.TRAIN, self.csr_ckpt_path)
             self.val_set = ReceptacleDataset(
-                self.data_dir, A.TestTransform, DataSplit.VAL, task=self.task)
+                self.data_dir, A.TestTransform, DataSplit.VAL, self.csr_ckpt_path)
 
         # Assign test dataset for use in dataloader(s)
         if stage == 'test' or stage is None:
             self.test_set = ReceptacleDataset(
-                self.data_dir, A.TestTransform, DataSplit.TEST, task=self.task)
+                self.data_dir, A.TestTransform, DataSplit.TEST, self.csr_ckpt_path)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last)
