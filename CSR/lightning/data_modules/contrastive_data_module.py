@@ -2,7 +2,6 @@ from shared.utils import worker_init_fn
 import pytorch_lightning as pl
 import dataloaders.augmentations as A
 from dataloaders.contrastive_dataset import ContrastiveDataset
-from dataloaders.contrastive_dataset_object import ContrastiveDatasetObject
 from shared.constants import (COLOR_JITTER_BRIGHTNESS,
                                   COLOR_JITTER_CONTRAST, COLOR_JITTER_HUE,
                                   COLOR_JITTER_SATURATION, DEFAULT_NUM_WORKERS,
@@ -13,22 +12,17 @@ from torch.utils.data import DataLoader
 
 
 class ContrastiveDataModule(pl.LightningDataModule):
-    def __init__(self, batch_size, data_dir, train_object_representation):
+    def __init__(self, batch_size, data_dir):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
-        self.train_object_representation = train_object_representation
 
     def prepare_data(self):
         pass
 
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
-        D = None
-        if self.train_object_representation:
-            D = ContrastiveDatasetObject
-        else:
-            D = ContrastiveDataset
+        D = ContrastiveDataset
 
         if stage == 'fit' or stage is None:
 
