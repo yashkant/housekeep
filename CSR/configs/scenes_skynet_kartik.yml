@@ -1,6 +1,6 @@
 project_name: 'contrastive'
 experiment_name: 'all_scenes'
-data_path: '/srv/rail-lab/flash5/kvr6/dev/data/csr'
+data_path: '/srv/rail-lab/flash5/kvr6/dev/data/csr_mini_22-04-2023_18-46-11'
 checkpoint_path: 'tmp'
 model_lite: True # using MovoV2Lite that does not load resnet
 seed: 0

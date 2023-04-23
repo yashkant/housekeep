@@ -37,10 +37,10 @@ class ContrastiveDataModule(pl.LightningDataModule):
                 self.data_dir, A.TestTransform, DataSplit.TEST)
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=True, worker_init_fn=worker_init_fn)
+        return DataLoader(self.train_set, batch_size=self.batch_size, collate_fn=self.train_set.collate_fn, shuffle=True, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=True, worker_init_fn=worker_init_fn)
 
     def val_dataloader(self):
-        return DataLoader(self.val_set, batch_size=self.batch_size, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=True, worker_init_fn=worker_init_fn)
+        return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=self.val_set.collate_fn, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=True, worker_init_fn=worker_init_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.val_set, batch_size=self.batch_size, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, worker_init_fn=worker_init_fn)
+        return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=self.test_set.collate_fn, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, worker_init_fn=worker_init_fn)

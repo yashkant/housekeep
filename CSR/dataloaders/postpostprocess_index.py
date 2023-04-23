@@ -56,7 +56,7 @@ def get_mask_from_bb(item_obj):
 
 def logP(st):
     pass
-    # print(st)
+    print(st)
     # logfile.write(st)
 
 def thread(o_tuple):
@@ -65,7 +65,10 @@ def thread(o_tuple):
     logP(f'processing {o1}, {o2}\n')
 
     files = np.argwhere(index['arr'][o1,o2,:] == 1).reshape(-1)
-    for fidx in files:
+
+    if len(files) == 0: return 0
+
+    for i, fidx in enumerate(files):
 
         fp = index['files'][fidx] # consistently using fp when saving RGB/resnet features  
 
@@ -108,12 +111,18 @@ def thread(o_tuple):
         # saving resnet vector as torch
         torch.save(resnet_output, resnet_filepath)
 
+    indices_partwise_path = os.path.join(target_dir, 'indices_partwise')
+
+    os.makedirs(indices_partwise_path, exist_ok=True) # scene indices partwise path folder
+    torch.save({'arr':index_new[o1][o2]}, os.path.join(indices_partwise_path, '{}_{}_indices.pt'.format(o1, o2)))
+    logP('{}, {}: indices saved to {}\n'.format(o1, o2, os.path.join(indices_partwise_path, '{}_{}_indices.pt'.format(o1, o2))))
+
 dateTimeObj = datetime.now()
 timestampStr = dateTimeObj.strftime("%d-%m-%Y_%H-%M-%S")
 
 logfile = open(f'logfile_{timestampStr}.log', 'w')
 
-target_dir = f'/srv/rail-lab/flash5/kvr6/dev/data/csr_full_{timestampStr}'
+target_dir = f'/srv/rail-lab/flash5/kvr6/dev/data/csr_full_{timestampStr}' # target dir (CHANGE FULL/MINI BASED ON NUM OF OBJECTS)
 shutil.rmtree(target_dir, ignore_errors=True)
 os.makedirs(target_dir, exist_ok=True)
 
@@ -139,13 +148,12 @@ pool = multiprocessing.Pool(12)
 
 print("Starting conversion.....")
 jobs = []
-for o1 in range(len(index['iids'])):
-    for o2 in range(len(index['iids'])):
+for o1 in range(len(index['iids'])): #range(5)
+    for o2 in range(len(index['iids'])): #range(5)
         jobs.append((o1, o2))
 
 for _ in tqdm.tqdm(pool.map(thread, jobs), total=len(jobs)):
     pass
 
-
 print(f"Saving index to {os.path.join(target_dir, 'all_scenes_indices.pt')}")
-torch.save({'arr':index_new,'files':index['files'], 'iids':index['iids']}, os.path.join(target_dir, 'all_scenes_indices.pt'))
+torch.save({'files':index['files'], 'iids':index['iids']}, os.path.join(target_dir, 'all_scenes_indices.pt'))
