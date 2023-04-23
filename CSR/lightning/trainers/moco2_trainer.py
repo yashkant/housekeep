@@ -56,7 +56,7 @@ class MocoV2Trainer(object):
                                               mode='min',
                                               every_n_val_epochs=5,
                                               save_top_k=-1)
-        data_callback = ContrastiveImagePredictionLogger()
+        # data_callback = ContrastiveImagePredictionLogger()
         learning_rate_callback = LearningRateMonitor(logging_interval='epoch')
 
         # set up the trainer
@@ -64,7 +64,7 @@ class MocoV2Trainer(object):
                              check_val_every_n_epoch=5,
                              gpus=torch.cuda.device_count(),
                              logger=wandb_logger,
-                             callbacks=[checkpoint_callback, learning_rate_callback, data_callback],
+                             callbacks=[checkpoint_callback, learning_rate_callback],
                              checkpoint_callback=True,
                              accelerator=self.conf.accelerator,
                              plugins=DDPPlugin(find_unused_parameters=False),
