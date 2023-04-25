@@ -7,13 +7,13 @@ import wandb
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.seed import seed_everything
-from lightning.data_modules.receptacle_data_module import \
-    ReceptacleDataModule
+from lightning.data_modules.classifier_data_module import \
+    ClassifierDataModule
 from lightning.modules.feature_decoder_module import FeatureDecoderModule
 from lightning.custom_callbacks import ConfusionLogger
 
 
-class LinearProbeTrainer(object):
+class FakeClassificationTrainer(object):
     def __init__(self, conf):
 
         self.conf = conf
@@ -21,29 +21,29 @@ class LinearProbeTrainer(object):
 
     def run(self):
         # Init our data pipeline
-        dm = ReceptacleDataModule(self.conf.batch_size, self.conf.data_path, self.conf.checkpoint_path)
+        dm = ClassifierDataModule(self.conf.batch_size, self.conf.data_path, self.conf.checkpoint_path)
 
         # To access the x_dataloader we need to call prepare_data and setup.
         dm.prepare_data()
         dm.setup()
 
         # Init our model
-        model = FeatureDecoderModule()
+        model = FeatureDecoderModule(num_classes=dm.num_classes)
 
         wandb_logger = WandbLogger(project=self.conf.project_name,
-                                   name=self.conf.experiment_name+'_edge',
+                                   name=self.conf.experiment_name+'_node',
                                    job_type='train')
 
         # defining callbacks
         checkpoint_callback = ModelCheckpoint(dirpath=self.conf.checkpoint_path,
-                                              filename='edge_pred/model-{epoch}-{val_acc:.2f}',
+                                              filename='node_pred/model-{epoch}-{val_acc:.2f}',
                                               verbose=True,
                                               monitor='val_loss',
                                               mode='min',
                                               every_n_val_epochs=5)
         learning_rate_callback = LearningRateMonitor(logging_interval='epoch')
 
-        confusion_callback = ConfusionLogger(self.conf.classes)
+        # confusion_callback = ConfusionLogger(self.conf.classes)
 
         # set up the trainer
         trainer = pl.Trainer(max_epochs=self.conf.epochs,
@@ -53,7 +53,8 @@ class LinearProbeTrainer(object):
                              logger=wandb_logger,
                              callbacks=[learning_rate_callback,
                                         checkpoint_callback,
-                                        confusion_callback],
+                                        # confusion_callback
+                                        ],
                              checkpoint_callback=True)
 
         # Train the model

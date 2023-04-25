@@ -305,20 +305,25 @@ class MocoV2Lite(pl.LightningModule):
 
         self.log_dict(log)
 
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.SGD(
+    #         self.parameters(),
+    #         self.hparams.learning_rate,
+    #         momentum=self.hparams.momentum,
+    #         weight_decay=self.hparams.weight_decay
+    #     )
+
+    #     scheduler = CosineAnnealingLR(
+    #         optimizer, T_max=100, last_epoch=-1)
+
+    #     lr_scheduler = {'scheduler': scheduler, 'monitor': 'val_acc'}
+
+    #     return [optimizer], [lr_scheduler]
+    
+
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(
-            self.parameters(),
-            self.hparams.learning_rate,
-            momentum=self.hparams.momentum,
-            weight_decay=self.hparams.weight_decay
-        )
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
-        scheduler = CosineAnnealingLR(
-            optimizer, T_max=100, last_epoch=-1)
-
-        lr_scheduler = {'scheduler': scheduler, 'monitor': 'val_acc'}
-
-        return [optimizer], [lr_scheduler]
 
     def _step_helper(self, batch, batch_idx, is_train):
         prefix = 'val'

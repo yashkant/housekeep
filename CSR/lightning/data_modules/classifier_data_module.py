@@ -1,7 +1,7 @@
 import os
 import pytorch_lightning as pl
 import dataloaders.augmentations as A
-from dataloaders.receptacle_dataset import ReceptacleDataset
+from dataloaders.classifier_dataset import ClassifierDataset
 from shared.constants import (COLOR_JITTER_BRIGHTNESS,
                                   COLOR_JITTER_CONTRAST, COLOR_JITTER_HUE,
                                   COLOR_JITTER_SATURATION, DEFAULT_NUM_WORKERS,
@@ -11,7 +11,7 @@ from shared.data_split import DataSplit
 from torch.utils.data import DataLoader
 
 
-class ReceptacleDataModule(pl.LightningDataModule):
+class ClassifierDataModule(pl.LightningDataModule):
     def __init__(self, batch_size, data_dir, csr_ckpt_dir, drop_last=True):
         super().__init__()
         self.data_dir = data_dir
@@ -29,21 +29,24 @@ class ReceptacleDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         # Assign train/val datasets for use in dataloaders
         if stage == 'fit' or stage is None:
-            self.train_set = ReceptacleDataset(
+            self.train_set = ClassifierDataset(
                 root_dir = self.data_dir, data_split = DataSplit.TRAIN, csr_ckpt_path = self.csr_ckpt_path)
-            self.val_set = ReceptacleDataset(
+            self.val_set = ClassifierDataset(
                 root_dir = self.data_dir, data_split = DataSplit.VAL, csr_ckpt_path = self.csr_ckpt_path)
 
         # Assign test dataset for use in dataloader(s)
         if stage == 'test' or stage is None:
-            self.test_set = ReceptacleDataset(
+            self.test_set = ClassifierDataset(
                 root_dir = self.data_dir, data_split = DataSplit.TEST, csr_ckpt_path = self.csr_ckpt_path)
+        
+        self.num_classes = self.train_set.num_classes
+
 
     def train_dataloader(self):
-        return DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last)
+        return DataLoader(self.train_set, batch_size=self.batch_size, shuffle=True, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last, collate_fn=self.train_set.collate)
 
     def val_dataloader(self):
-        return DataLoader(self.val_set, batch_size=self.batch_size, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last)
+        return DataLoader(self.val_set, batch_size=self.batch_size, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last, collate_fn=self.val_set.collate)
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last)
+        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=self.drop_last, collate_fn=self.test_set.collate)

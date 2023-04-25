@@ -37,6 +37,8 @@ class PreferenceDataset(Dataset):
             self.CSRprocess = Moco2Module().load_from_checkpoint(csr_ckpt_path)
         else:
             self.CSRprocess = MocoV2Lite().load_from_checkpoint(csr_ckpt_path)
+        self.CSRprocess.eval()
+        get_csr = lambda resnet_vec: torch.nn.functional.normalize(self.CSRprocess.projection_q(resnet_vec), dim=-1)
         
         split_str = {DataSplit.TRAIN:'train', DataSplit.TEST:'test', DataSplit.VAL:'val'}[data_split]
         index_path = os.path.join(root_dir, '..', f'{split_str}_indices.pt')
@@ -68,7 +70,7 @@ class PreferenceDataset(Dataset):
                 csr_input = get_image(file, original_index.index(item['iid']),  original_index.index(item['iid']))
             else:
                 csr_input = get_resnet(file, original_index.index(item['iid']),  original_index.index(item['iid']))
-            csr_feature = self.CSRprocess(csr_input)
+            csr_feature = get_csr(csr_input)
             clip_feature = get_clip_feature(item['cropped_image']).data['pixel_values'][0].reshape(-1)
             return csr_feature, torch.from_numpy(clip_feature)
 
