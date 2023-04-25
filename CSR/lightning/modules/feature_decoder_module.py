@@ -25,7 +25,7 @@ class FeatureDecoderModule(pl.LightningModule):
 
 
     def forward(self, x):
-        return self.linear(self.encoder(x))
+        return self.linear(x)
 
 
     def training_step(self, batch, batch_idx):
