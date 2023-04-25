@@ -2,39 +2,19 @@
 #SBATCH --job-name=csr_5_obj
 #SBATCH --output=slurm_logs/csr_5_obj-%j.out
 #SBATCH --error=slurm_logs/csr_5_obj-%j.err
-#SBATCH --gres gpu:4
-#SBATCH --nodes 1
+#SBATCH --gres gpu:1
 #SBATCH --cpus-per-task 16
 #SBATCH --signal=USR1@1000
 #SBATCH --constraint=a40
 #SBATCH --partition=short
 #SBATCH --exclude=ig-88,perseverance
 
-source /srv/flash1/gchhablani3/miniconda3/etc/profile.d/conda.sh
-conda deactivate
+source /srv/rail-lab/flash5/kvr6/csrremote.sh
 conda activate csr
 
-# export GLOG_minloglevel=2
-# export HABITAT_SIM_LOG=quiet
-# export MAGNUM_LOG=quiet
+cd /srv/rail-lab/flash5/kvr6/dev/housekeep_csr/CSR
 
-# MASTER_ADDR=$(srun --ntasks=1 hostname 2>&1 | tail -n1)
-# export MASTER_ADDR
-
-cd /srv/flash1/gchhablani3/housekeep/CSR
-
-# dataset=$1
-
-config="./configs/all_scenes.yml"
-
-# DATA_PATH="data/datasets/instance_image_nav"
-# TENSORBOARD_DIR="tb/iinav/ddppo/long_seed_1"
-# CHECKPOINT_DIR="data/new_checkpoints/iinav/ddppo/long_seed_1"
-
-# mkdir -p $TENSORBOARD_DIR
-# mkdir -p $CHECKPOINT_DIR
-set -x
+config="/srv/rail-lab/flash5/kvr6/dev/housekeep_csr/CSR/configs/scenes_skynet_kartik.yml"
 
 echo "In CSR"
-srun python train_csr.py \
---conf $config \
+python train_csr.py --conf $config

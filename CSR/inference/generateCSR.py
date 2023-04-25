@@ -51,6 +51,31 @@ class RunCSR():
         return torch.mean(torch.stack(latents), dim=0)
 
 
+    def run_obj_pair_resnet_only(self, files, iid1, iid2):
+        latents = []
+        for file_path in files:
+            with open(os.path.join(self._csr_datadir, file_path.split('|')[-1])) as f:
+                file_dict = json.load(f)
+            item_obj_1 = [item for item in file_dict['items'] if item['iid']==iid1]
+            item_obj_2 = [item for item in file_dict['items'] if item['iid']==iid2]
+            
+            xmin, ymin, xmax, ymax = item_obj_1[0]['bounding_box']
+            box_1 = np.array([[max(xmin-5, 0), max(ymin-5, 0)], [min(xmax+5+1, 255), min(ymax+5+1, 255)]])
+            m1 = get_box(box_1)
+
+            xmin, ymin, xmax, ymax = item_obj_2[0]['bounding_box']
+            box_2 = np.array([[max(xmin-5, 0), max(ymin-5, 0)], [min(xmax+5+1, 255), min(ymax+5+1, 255)]])
+            m2 = get_box(box_2)
+
+            image = Image.fromarray(np.array(file_dict['rgb'], dtype=np.uint8))
+
+            img_q = torch.cat((image, m1, m2), 1)
+            q = self.encoder_q(img_q)  # queries: NxC
+            q = torch.nn.functional.normalize(q, dim=1)
+            latents.append(q)
+        return torch.mean(torch.stack(latents), dim=0)
+
+
     def run(self):
         for idx1, iid1 in enumerate(self.iids):
             for idx2, iid2 in enumerate(self.iids):

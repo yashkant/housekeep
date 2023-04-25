@@ -90,12 +90,7 @@ class MocoV2Lite(pl.LightningModule):
         for param_q, param_k in zip(self.projection_q.parameters(), self.projection_k.parameters()):
             param_k.data.copy_(param_q.data)  # initialize
             param_k.requires_grad = False  # not update by gradient
-        
-        for param in self.projection_q[0].resnet.parameters():
-            param.requires_grad = False
-        for param in self.projection_k[0].resnet.parameters():
-            param.requires_grad = False
-            
+                    
         # create the queue
         self.register_buffer("queue_edge", torch.randn(emb_dim, num_negatives))
         self.queue_edge = nn.functional.normalize(self.queue_edge, dim=0)
@@ -256,7 +251,9 @@ class MocoV2Lite(pl.LightningModule):
             if self.trainer.use_ddp or self.trainer.use_ddp2:
                 k = self._batch_unshuffle_ddp(k, idx_unshuffle)
 
-        # split keys and queries into two streams for edge and self features
+        # split keys and queries into two streams for edge and self 
+        print('node shape: ', k.size())
+        print('is self feature: ', is_self_feature)
         k_node = k[is_self_feature]
         q_node = q[is_self_feature]
         k_edge = k[~is_self_feature]
@@ -329,10 +326,16 @@ class MocoV2Lite(pl.LightningModule):
             prefix = 'train'
 
         q_dict, k_dict = batch
-        img_q = torch.cat(
-            (q_dict['image'], q_dict['mask_1'], q_dict['mask_2']), 1)
-        img_k = torch.cat(
-            (k_dict['image'], k_dict['mask_1'], k_dict['mask_2']), 1)
+
+        print(q_dict.keys())
+
+        img_q = q_dict['input']
+        img_k = k_dict['input']
+
+        # img_q = torch.cat(
+        #     (q_dict['image'], q_dict['mask_1'], q_dict['mask_2']), 1)
+        # img_k = torch.cat(
+        #     (k_dict['image'], k_dict['mask_1'], k_dict['mask_2']), 1)
 
         logits_node, labels_node, logits_edge, labels_edge = self(
             img_q=img_q,
