@@ -17,24 +17,29 @@ os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 
 class ContrastiveDataset(Dataset):
 
-    def __init__(self, root_dir, transform, data_split: DataSplit):
+    def __init__(self, root_dir, transform, data_split: DataSplit, test_unseen_objects = True):
         # set the root directory
         self.root_dir = root_dir
         self.scenes_indices = torch.load(os.path.join(root_dir, 'all_scenes_indices.pt'))
         self.iids = self.scenes_indices['iids']
         self.data_split = data_split
 
-        if data_split == 1:
-            # mask = slice(0, len(self.iids)//2)
-            mask_by_data_split = slice(0, 8)
-        elif data_split == 2:
-            # mask = slice(len(self.iids)//2, len(self.iids)//2+len(self.iids)//4)
-            mask_by_data_split = slice(8, 12)
+        if data_split == DataSplit.TRAIN:
+            mask_by_data_split = slice(0, 40)
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.VAL:
+            mask_by_data_split = slice(38, 42)
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.TEST:
+            if test_unseen_objects:
+                mask_by_data_split = slice(59, 100)
+            else:
+                mask_by_data_split = slice(0, 100)
+            use_episode = lambda e: e <= 10
         else:
-            # mask = slice(len(self.iids)//2+len(self.iids)//4, len(self.iids))
-            mask_by_data_split = slice(12, 14)
-
-
+            assert False, 'Data split not recognized'
+        
+        self.mask = mask_by_data_split
         #DEBUG: overriding mask for mini dataset
         if 'mini' in root_dir.split('/')[-1]:
             self.mask = slice(0, 5)
@@ -78,14 +83,36 @@ class ContrastiveDataset(Dataset):
                     for f2 in files[i+1:]:
                         f1_name = self.scenes_indices['files'][f1]
                         f2_name = self.scenes_indices['files'][f2]
-                        if f1_name.split('|')[0] == f2_name.split('|')[0]: # positive pairs must come from the same scene and episode
-                            self.indexed_data.append((o1, o2, f1_name, f2_name)) # all positive pairs
+                        scene1 = f1_name.split('|')[0]
+                        scene2 = f2_name.split('|')[0]
+                        episode1 = int(f1_name.split('|')[1].split('.')[0].split('_')[-1])//1000
+                        episode2 = int(f2_name.split('|')[1].split('.')[0].split('_')[-1])//1000
+                        # print(scene1, scene2, int(f1_name.split('|')[1].split('.')[0].split('_')[-1]), int(f2_name.split('|')[1].split('.')[0].split('_')[-1]), episode1, episode2)
+                        # raise Exception('stop')
+                        if scene1 == scene2 and episode1 == episode2 and use_episode(episode1): # positive pairs must come from the same scene and episode
+                            o1_original = self.iids.index(self.current_iids[o1])
+                            o2_original = self.iids.index(self.current_iids[o2])
+                            if os.path.exists(self.file_path_resnet(f1_name, o1_original, o2_original)) and os.path.exists(self.file_path_resnet(f2_name, o1_original, o2_original)):
+                                self.indexed_data.append((o1_original, o2_original, f1_name, f2_name)) # all positive pairs
+                            else:
+                                print('missing file: ', self.file_path_resnet(f1_name, o1_original, o2_original), self.file_path_resnet(f2_name, o1_original, o2_original))
+                                raise Exception('missing file')
        
         self.length = len(self.indexed_data)
+        print('Total length of dataset type ', data_split, ': ', self.length)
 
-        # save the data augmentations that are to be applied to the images
-        self.transform = transform
-        assert self.transform is not None
+        # # save the data augmentations that are to be applied to the images
+        # self.transform = transform
+        # assert self.transform is not None
+
+    def file_path_resnet(self, fp, o1, o2): 
+            filepath_full = os.path.join(self.root_dir, 
+                                        fp.split('|')[0], 
+                                        'baseline_phasic_oracle',
+                                        'resnet',
+                                        '{}_{}_{}'.format(o1, o2, fp.split('|')[1].replace('.json','.pt'))
+                                    )
+            return filepath_full
 
     def __len__(self):
         return self.length
@@ -93,20 +120,13 @@ class ContrastiveDataset(Dataset):
     def __getitem__(self, idx):
         obj_1, obj_2, file_path_1, file_path_2 = self.indexed_data[idx]
 
-        file_dict_resnet = \
-            lambda fp: torch.load(os.path.join(self.root_dir, 
-                                        fp.split('|')[0], 
-                                        'baseline_phasic_oracle',
-                                        'resnet',
-                                        '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.pt'))
-                                    )
-                                )
+        file_dict_resnet = lambda fp: torch.load(self.file_path_resnet(fp, obj_1, obj_2))
 
         data_pair = []
         for file_path in [file_path_1, file_path_2]:
-
             tensor_data = file_dict_resnet(file_path)
-            data_pair.append(tensor_data)
+            if tensor_data is not None:
+                data_pair.append(tensor_data)
 
         # create dict and return
         return dict({'input': data_pair[0].detach(), 'is_self_feature': obj_1==obj_2}), dict({'input': data_pair[1].detach(), 'is_self_feature': obj_1==obj_2})

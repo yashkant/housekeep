@@ -16,13 +16,30 @@ class ReceptacleDataset(Dataset):
                  data_split: DataSplit,
                  csr_ckpt_path: str,
                 #  image_input: bool = False,
-                 max_annotations = -1
+                 max_annotations = -1,
+                 test_unseen_objects = True
                  ):
         
         # if image_input:
         #     raise NotImplementedError("Image input not implemented yet")
         #     self.CSRprocess = MocoV2().load_from_checkpoint(csr_ckpt_path)
         # else:
+
+        if data_split == DataSplit.TRAIN:
+            use_iid_idx = lambda o: o<40
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.VAL:
+            use_iid_idx = lambda o: o>=38 and o<42
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.TEST:
+            if test_unseen_objects:
+                use_iid_idx = lambda o: o>=59
+            else:
+                use_iid_idx = lambda o: True
+            use_episode = lambda e: e <= 10
+        else:
+            assert False, 'Data split not recognized'
+
         print(f"Reading checkpoint at :{csr_ckpt_path}")
         self.CSRprocess = MocoV2Lite().load_from_checkpoint(csr_ckpt_path)
         self.CSRprocess.eval()
@@ -51,23 +68,28 @@ class ReceptacleDataset(Dataset):
                                         '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.png')))))
         
         self.data = []
+
         for file in original_index['files']:
+            episode = int(file.split('|')[1].split('.')[0].split('_')[-1])//1000
+            if not use_episode(episode):
+                continue
             file_dict = file_dict_reader(file)
             items = file_dict['items']
             gt_mapping = file_dict['current_mapping']
             for item1 in [i for i in items if i['type'] == 'obj']:
-                for item2 in [i for i in items if i['type'] == 'rec']:
-                    if item1 != item2:
-                        # if image_input:
-                        #     csr_input = get_image(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
-                        # else:
-                        csr_input = get_resnet(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
-                        csr_feature = get_csr(csr_input)
-                        if gt_mapping[item1['obj_key']] == item2['obj_key']:
-                            label = 1
-                        else:
-                            label = 0
-                        self.data.append((csr_feature, label))
+                if use_iid_idx(item1['iid']):
+                    for item2 in [i for i in items if i['type'] == 'rec']:
+                        if use_iid_idx(item1['iid']):
+                            # if image_input:
+                            #     csr_input = get_image(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
+                            # else:
+                            csr_input = get_resnet(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
+                            csr_feature = get_csr(csr_input)
+                            if gt_mapping[item1['obj_key']] == item2['obj_key']:
+                                label = 1
+                            else:
+                                label = 0
+                            self.data.append((csr_feature, label))
 
         self.length = max_annotations if max_annotations > 0 else len(self.data)
         

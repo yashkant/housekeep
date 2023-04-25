@@ -30,8 +30,24 @@ class PreferenceDataset(Dataset):
                  csr_ckpt_path: str,
                  image_input: bool = False,
                  max_annotations = -1,
+                 test_unseen_objects = True
                  ):
         
+        if data_split == DataSplit.TRAIN:
+            use_iid_idx = lambda o: o<40
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.VAL:
+            use_iid_idx = lambda o: o>=38 and o<42
+            use_episode = lambda e: e > 10
+        elif data_split == DataSplit.TEST:
+            if test_unseen_objects:
+                use_iid_idx = lambda o: o>=59
+            else:
+                use_iid_idx = lambda o: True
+            use_episode = lambda e: e <= 10
+        else:
+            assert False, 'Data split not recognized'
+
         if image_input:
             raise NotImplementedError("Image input not implemented yet")
             self.CSRprocess = Moco2Module().load_from_checkpoint(csr_ckpt_path)
@@ -76,15 +92,19 @@ class PreferenceDataset(Dataset):
 
         self.data = []
         for file in original_index['files']:
+            episode = int(file.split('|')[1].split('.')[0].split('_')[-1])//1000
+            if not use_episode(episode):
+                continue
             items = file_dict['items']
             gt_mapping = file_dict['correct_mapping']
             for item1 in [i for i in items if i['type'] == 'obj']:
-                csr_feature1, clip_feature1 = get_features(file, item1)
-                for item2 in [i for i in items if i['type'] == 'rec']:
-                    if item1 != item2:
-                        csr_feature2, clip_feature2 = get_features(file, item2)
-                        label = get_preference(item1, item2, gt_mapping, persona=None)
-                        self.data.append(((csr_feature1, clip_feature1, csr_feature2, clip_feature2), label))
+                if use_iid_idx(item1['iid']):
+                    csr_feature1, clip_feature1 = get_features(file, item1)
+                    for item2 in [i for i in items if i['type'] == 'rec']:
+                        if use_iid_idx(item2['iid']):
+                            csr_feature2, clip_feature2 = get_features(file, item2)
+                            label = get_preference(item1, item2, gt_mapping, persona=None)
+                            self.data.append(((csr_feature1, clip_feature1, csr_feature2, clip_feature2), label))
                         
         self.length = max_annotations if max_annotations > 0 else len(self.data)
         
