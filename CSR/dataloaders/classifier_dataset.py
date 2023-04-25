@@ -8,8 +8,7 @@ from torch.utils.data import Dataset
 from lightning.modules.moco2_module import MocoV2
 from lightning.modules.moco2_module_mini import MocoV2Lite
 
-
-class ReceptacleDataset(Dataset):
+class ClassifierDataset(Dataset):
 
     def __init__(self, 
                  root_dir: str, 
@@ -28,8 +27,9 @@ class ReceptacleDataset(Dataset):
         self.CSRprocess.eval()
         get_csr = lambda resnet_vec: torch.nn.functional.normalize(self.CSRprocess.projection_q(resnet_vec), dim=-1)
 
+        self.root_dir = root_dir
         split_str = {DataSplit.TRAIN:'train', DataSplit.TEST:'test', DataSplit.VAL:'val'}[data_split]
-        index_path = os.path.join(root_dir, f'all_scenes_indices.pt')
+        index_path = os.path.join('/srv/cvmlp-lab/flash1/gchhablani3/housekeep', f'all_scenes_indices.pt')
         print(f'Loading index from {index_path}')
         original_index = torch.load(index_path)
         
@@ -37,37 +37,41 @@ class ReceptacleDataset(Dataset):
                                                 'baseline_phasic_oracle',
                                                 'csr',
                                                 fp.split('|')[1])))
-        
-        get_resnet = lambda fp, obj_1, obj_2 : torch.load(open(os.path.join(self.root_dir, 
+
+        get_resnet = lambda fp, obj_1, obj_2 : torch.load((os.path.join(self.root_dir, 
                                         fp.split('|')[0], 
                                         'baseline_phasic_oracle',
                                         'resnet',
                                         '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.pt')))))
         
-        get_image = lambda fp, obj_1, obj_2 : torch.load(open(os.path.join(self.root_dir, 
+        get_image = lambda fp, obj_1, obj_2 : torch.load((os.path.join(self.root_dir, 
                                         fp.split('|')[0], 
                                         'baseline_phasic_oracle',
                                         'images',
                                         '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.png')))))
         
+        self.num_classes = len(original_index['iids'])
+
         self.data = []
-        for file in original_index['files']:
-            file_dict = file_dict_reader(file)
-            items = file_dict['items']
-            gt_mapping = file_dict['current_mapping']
-            for item1 in [i for i in items if i['type'] == 'obj']:
-                for item2 in [i for i in items if i['type'] == 'rec']:
-                    if item1 != item2:
-                        # if image_input:
-                        #     csr_input = get_image(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
-                        # else:
-                        csr_input = get_resnet(file, original_index.index(item1['iid']),  original_index.index(item2['iid']))
-                        csr_feature = get_csr(csr_input)
-                        if gt_mapping[item1['obj_key']] == item2['obj_key']:
-                            label = 1
-                        else:
-                            label = 0
-                        self.data.append((csr_feature, label))
+        for o1 in range(5):
+            files = original_index['arr'][o1][o1]
+            for scene in os.listdir(self.root_dir):
+                if scene in ['all_scenes_indices.pt', 'indices_partwise']:
+                    continue
+                for filename in os.listdir(os.path.join(self.root_dir, 
+                                        scene, 
+                                        'baseline_phasic_oracle',
+                                        'resnet')):
+                    # if image_input:
+                    #     csr_input = get_image(filename, original_index.index(item['iid']),  original_index.index(item['iid']))
+                    # else:
+                    if filename.startswith(f'{o1}_{o1}'):
+                        csr_input = torch.load(os.path.join(self.root_dir, 
+                                            scene, 
+                                            'baseline_phasic_oracle',
+                                            'resnet', filename))
+                        csr_feature = get_csr(csr_input).detach()
+                        self.data.append((csr_feature.squeeze(0), torch.tensor([o1]).to(int)))
 
         self.length = max_annotations if max_annotations > 0 else len(self.data)
         
@@ -76,3 +80,10 @@ class ReceptacleDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.data[idx]
+
+    def collate(self, inputs):
+        data = {'features': torch.tensor([]), 'labels':torch.tensor([])}
+        for feature, obj in inputs:
+            data['features'] = torch.cat([data['features'], feature.unsqueeze(0)], dim=0)
+            data['labels'] = torch.cat([data['labels'], obj.unsqueeze(0)], dim=0).to(int)
+        return data

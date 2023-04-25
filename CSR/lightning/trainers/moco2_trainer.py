@@ -46,7 +46,8 @@ class MocoV2Trainer(object):
 
         wandb_logger = WandbLogger(project=self.conf.project_name,
                                    name=self.conf.experiment_name,
-                                   job_type='train')
+                                   job_type='train',
+                                   mode='online')
 
         # defining callbacks
         checkpoint_callback = ModelCheckpoint(dirpath=self.conf.checkpoint_path,
@@ -54,17 +55,17 @@ class MocoV2Trainer(object):
                                               verbose=True,
                                               monitor='val_loss',
                                               mode='min',
-                                              every_n_val_epochs=5,
+                                              every_n_val_epochs=1,
                                               save_top_k=-1)
-        data_callback = ContrastiveImagePredictionLogger()
+        # data_callback = ContrastiveImagePredictionLogger()
         learning_rate_callback = LearningRateMonitor(logging_interval='epoch')
 
         # set up the trainer
         trainer = pl.Trainer(max_epochs=self.conf.epochs,
-                             check_val_every_n_epoch=5,
+                             check_val_every_n_epoch=1,
                              gpus=torch.cuda.device_count(),
                              logger=wandb_logger,
-                             callbacks=[checkpoint_callback, learning_rate_callback, data_callback],
+                             callbacks=[checkpoint_callback, learning_rate_callback],
                              checkpoint_callback=True,
                              accelerator=self.conf.accelerator,
                              plugins=DDPPlugin(find_unused_parameters=False),

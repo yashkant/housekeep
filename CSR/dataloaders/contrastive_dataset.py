@@ -109,7 +109,7 @@ class ContrastiveDataset(Dataset):
             data_pair.append(tensor_data)
 
         # create dict and return
-        return dict({'input': data_pair[0], 'is_self_feature': obj_1==obj_2}), dict({'input': data_pair[1], 'is_self_feature': obj_1==obj_2})
+        return dict({'input': data_pair[0].detach(), 'is_self_feature': obj_1==obj_2}), dict({'input': data_pair[1].detach(), 'is_self_feature': obj_1==obj_2})
 
     def collate_fn(self, full_data_list):
 

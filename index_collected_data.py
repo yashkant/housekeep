@@ -43,16 +43,17 @@ val_scenes = ['merom_1_int', 'ihlen_1_int']
 test_scenes = ['benevolence_1_int',  'beechwood_1_int', 'merom_0_int']
 
 scene_files = ['train_indices.pt', 'val_indices.pt', 'test_indices.pt']
-iid_frame_dict = {}
-iids = []
+# final_iid_frame_dict = {}
+# final_iids = []
 
-files_all = []
+# final_files = []
 
 for scenes, scene_file in zip([train_scenes, val_scenes, test_scenes], scene_files):
     for scene in scenes:
         files_scene = os.listdir(f'./csr_raw/{scene}/baseline_phasic_oracle/csr')
-
-        files_all += [f'{scene}|{fil}' for fil in files_scene]
+        iids = []
+        iid_frame_dict = {}
+        files_all = [f'{scene}|{fil}' for fil in files_scene]
 
         for fil in tqdm(files_scene):
             path = os.path.join(f'./csr_raw/{scene}/baseline_phasic_oracle/csr', fil)
@@ -75,14 +76,19 @@ for scenes, scene_file in zip([train_scenes, val_scenes, test_scenes], scene_fil
                     else:
                         iid_frame_dict[item['iid']][item_2['iid']].append(f'{scene}|{path}')
 
-    arr = np.zeros((len(iids), len(iids), len(files_all)))
+        arr = np.zeros((len(iids), len(iids), len(files_all)))
 
-    for iid in iid_frame_dict.keys():
-        for iid_2 in iid_frame_dict[iid].keys():
-            for fil in iid_frame_dict[iid][iid_2]:
+        for iid in iid_frame_dict.keys():
+            for iid_2 in iid_frame_dict[iid].keys():
+                for fil in iid_frame_dict[iid][iid_2]:
 
-                short_file_name = '{}|{}'.format(fil.split('|')[0], fil.split('/')[-1])
-                arr[iids.index(iid), iids.index(iid_2), files_all.index(short_file_name)] = 1
+                    short_file_name = '{}|{}'.format(fil.split('|')[0], fil.split('/')[-1])
+                    arr[iids.index(iid), iids.index(iid_2), files_all.index(short_file_name)] = 1
+        torch.save({
+            'iids': iids,
+            'files': files_all,
+            'arr': arr
+        }, f"{scene}_indices.pt")
 
     # for iid in iid_frame_dict.keys():
     #     print(len(iid_frame_dict[iid][iid]))
@@ -94,8 +100,8 @@ for scenes, scene_file in zip([train_scenes, val_scenes, test_scenes], scene_fil
     #             s += len(iid_frame_dict[iid][iid_2])
     #     print(s)
 
-    torch.save({
-        'iids': iids,
-        'files': files_all,
-        'arr': arr
-    }, scene_file)
+    # torch.save({
+    #     'iids': final_,
+    #     'files': files_all,
+    #     'arr': arr
+    # }, scene_file)

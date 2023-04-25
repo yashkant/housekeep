@@ -252,8 +252,8 @@ class MocoV2Lite(pl.LightningModule):
                 k = self._batch_unshuffle_ddp(k, idx_unshuffle)
 
         # split keys and queries into two streams for edge and self 
-        print('node shape: ', k.size())
-        print('is self feature: ', is_self_feature)
+        # print('node shape: ', k.size())
+        # print('is self feature: ', is_self_feature)
         k_node = k[is_self_feature]
         q_node = q[is_self_feature]
         k_edge = k[~is_self_feature]
@@ -305,20 +305,25 @@ class MocoV2Lite(pl.LightningModule):
 
         self.log_dict(log)
 
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.SGD(
+    #         self.parameters(),
+    #         self.hparams.learning_rate,
+    #         momentum=self.hparams.momentum,
+    #         weight_decay=self.hparams.weight_decay
+    #     )
+
+    #     scheduler = CosineAnnealingLR(
+    #         optimizer, T_max=100, last_epoch=-1)
+
+    #     lr_scheduler = {'scheduler': scheduler, 'monitor': 'val_acc'}
+
+    #     return [optimizer], [lr_scheduler]
+    
+
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(
-            self.parameters(),
-            self.hparams.learning_rate,
-            momentum=self.hparams.momentum,
-            weight_decay=self.hparams.weight_decay
-        )
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
-        scheduler = CosineAnnealingLR(
-            optimizer, T_max=100, last_epoch=-1)
-
-        lr_scheduler = {'scheduler': scheduler, 'monitor': 'val_acc'}
-
-        return [optimizer], [lr_scheduler]
 
     def _step_helper(self, batch, batch_idx, is_train):
         prefix = 'val'
@@ -327,7 +332,7 @@ class MocoV2Lite(pl.LightningModule):
 
         q_dict, k_dict = batch
 
-        print(q_dict.keys())
+        # print(q_dict.keys())
 
         img_q = q_dict['input']
         img_k = k_dict['input']
