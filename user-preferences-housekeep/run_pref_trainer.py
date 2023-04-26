@@ -120,15 +120,15 @@ class Dataset(torch.utils.data.Dataset):
         self.user_conditioned = user_conditioned
 
         self.input_tensor_dim = \
-            self.data_dict[0]['csr_item_1'].shape[0] + \
-            self.data_dict[0]['clip_item_1'].shape[0] + \
-            self.data_dict[0]['csr_item_2'].shape[0] + \
-            self.data_dict[0]['clip_item_2'].shape[0] + \
-            self.data_dict[0]['room_embb'].shape[0]
+            self.data_dict[0]['csr_item_1'].shape[-1] + \
+            self.data_dict[0]['clip_item_1'].shape[-1] + \
+            self.data_dict[0]['csr_item_2'].shape[-1] + \
+            self.data_dict[0]['clip_item_2'].shape[-1] + \
+            self.data_dict[0]['room_embb'].shape[-1]
 
         if self.user_conditioned:
             self.input_tensor_dim += \
-                self.data_dict[self.data_dict_indextokey[0]]['persona_embb'].shape[0]
+                self.data_dict[0]['persona_embb'].shape[-1]
 
     def __getitem__(self, index):
 
@@ -146,19 +146,17 @@ class Dataset(torch.utils.data.Dataset):
             Args:
                 data_points: A list of dicts'''
 
-        print(data_points[0].values())
-
         # data_points is a list of dicts
-        csr_embbs_1 = torch.concat([torch.tensor(d['csr_item_1']).unsqueeze(0) for d in data_points], dim=0)
-        clip_embbs_1 = torch.concat([torch.tensor(d['clip_item_1']).unsqueeze(0) for d in data_points], dim=0)
-        csr_embbs_2 = torch.concat([torch.tensor(d['csr_item_2']).unsqueeze(0) for d in data_points], dim=0)
-        clip_embbs_2 = torch.concat([torch.tensor(d['clip_item_2']).unsqueeze(0) for d in data_points], dim=0)
+        csr_embbs_1 = torch.cat([torch.tensor(d['csr_item_1']).unsqueeze(0) for d in data_points], dim=0)
+        clip_embbs_1 = torch.cat([torch.tensor(d['clip_item_1']) for d in data_points], dim=0)
+        csr_embbs_2 = torch.cat([torch.tensor(d['csr_item_2']).unsqueeze(0) for d in data_points], dim=0)
+        clip_embbs_2 = torch.cat([torch.tensor(d['clip_item_2']) for d in data_points], dim=0)
 
-        room_embbs = torch.concat([torch.tensor(d['room_embb']).unsqueeze(0) for d in data_points], dim=0)
+        room_embbs = torch.cat([torch.tensor(d['room_embb']).unsqueeze(0) for d in data_points], dim=0)
 
         if self.user_conditioned:
 
-            user_embbs = torch.concat([torch.tensor(d['persona_embb']).unsqueeze(0) for d in data_points], dim=0)
+            user_embbs = torch.cat([torch.tensor(d['persona_embb']).unsqueeze(0) for d in data_points], dim=0)
 
             input_tensor = torch.cat([csr_embbs_1, clip_embbs_1, csr_embbs_2, clip_embbs_2, room_embbs, user_embbs], dim=1)
 
@@ -167,10 +165,6 @@ class Dataset(torch.utils.data.Dataset):
             input_tensor = torch.cat([csr_embbs_1, clip_embbs_1, csr_embbs_2, clip_embbs_2, room_embbs], dim=1)
 
         labels = torch.tensor([d['label'] for d in data_points])
-
-        # print(input_tensor.shape) #DEBUG
-        # print(labels.shape)
-        # input('wait')
 
         if self.is_train:
             return input_tensor.to(self.device), \
@@ -191,14 +185,14 @@ def main():
     config = {
         'hidden_size': 512,
         'output_size': 1,
-        'batch_size': 64,
+        'batch_size': 32,
         'max_epochs': 15,
         'lr': 1e-4,
         'num_layers': 2,
         'weight_decay': 1e-6,
-        'train_data_path': '/coc/flash5/mpatel377/data/csr_clip_preferences/seen_partial_preferences_2400.pt',
+        'train_data_path': '/coc/flash5/mpatel377/data/csr_clip_preferences/seen_partial_preferences_4600.pt',
         'test_data_path': None,
-        'user_conditioned': False
+        'user_conditioned': True
     }
 
     print('config: ')
