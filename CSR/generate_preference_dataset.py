@@ -8,7 +8,8 @@ from PIL import Image
 
 import torch
 import torch.nn.functional as F
-from transformers import CLIPImageProcessor
+# from transformers import CLIPImageProcessor
+from transformers import CLIPProcessor, CLIPModel
 from torchvision.io import read_image
 
 sys.path.append('/srv/rail-lab/flash5/mpatel377/dev/housekeep_csr/CSR')
@@ -142,7 +143,10 @@ class GeneratePreferenceDataset():
                                         ))
         
         ## TODO: Verify that this is the correct way to get the CLIP features
-        self.get_clip_feature = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+
 
         self.user_persona_dict = torch.load(user_personas_path)
 
@@ -193,8 +197,8 @@ class GeneratePreferenceDataset():
 
         clip_feature = None
         try:
-            clip_feature = self.get_clip_feature(cropped_image).data['pixel_values'][0].reshape(-1)
-            clip_feature = torch.from_numpy(clip_feature)
+            processed = self.processor(images=cropped_image, return_tensors="pt", padding=True)
+            clip_feature = self.model.get_image_features(pixel_values=processed['pixel_values'])
         except ValueError as e:
             print(cropped_image.size)
             print("Clip failed for ",e)
@@ -211,7 +215,7 @@ class GeneratePreferenceDataset():
         item2_key = OBJECT_KEY_FILTER[o2]
         item2_class = obj_key_to_class(item2_key)
 
-        room = item2_class.split('|')[1]
+        room = item2_class.split('|')[0]
 
         if persona_id is None:
             raise KeyError(f'Persona id required')
@@ -290,7 +294,7 @@ class GeneratePreferenceDataset():
                                 'csr_item_1': csr_feature1,
                                 'csr_item_2': csr_feature2,
                                 'clip_item_1': clip_feature1,
-                                'clip_item_1': clip_feature2,
+                                'clip_item_2': clip_feature2,
                                 'room_embb': room_feat,
                                 'persona_id': persona_id,
                                 'persona_embb': user_embb,
