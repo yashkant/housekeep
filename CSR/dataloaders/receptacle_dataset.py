@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset
 from lightning.modules.moco2_module import MocoV2
 from lightning.modules.moco2_module_mini import MocoV2Lite
-from dataloaders.contrastive_dataset import object_key_filter
+from dataloaders.contrastive_dataset import object_key_filter, obj_episode_filters 
 
 
 GROUND_TRUTH_FILE = '/srv/rail-lab/flash5/mpatel377/data/csr/scene_graph_edges_complete.pt'
@@ -28,21 +28,8 @@ class ReceptacleDataset(Dataset):
         
         self.root_dir = root_dir
         self.data_split = data_split
-
-        if data_split == DataSplit.TRAIN:
-            use_obj = lambda o: o in np.arange(0,90) or o > 105
-            use_episode = lambda e: e > 10
-        elif data_split == DataSplit.VAL:
-            use_obj = lambda o: o in np.arange(85,95) or o > 105
-            use_episode = lambda e: e > 10
-        elif data_split == DataSplit.TEST:
-            if test_unseen_objects:
-                use_obj = lambda o: o in np.arange(95,106) or o > 105
-            else:
-                use_obj = lambda o: o in np.arange(0,95) or o > 105
-            use_episode = lambda e: e <= 10
-        else:
-            assert False, 'Data split not recognized'
+        
+        use_obj, use_episode = obj_episode_filters(data_split, test_unseen_objects)
         
         # ## USE ALL OBJECTS AND EPISODES
         # use_obj = lambda o: True

@@ -10,7 +10,7 @@ from shared.data_split import DataSplit
 from lightning.modules.moco2_module_mini import MocoV2Lite
 from lightning.modules.feature_decoder_module import FeatureDecoderModule
 from dataloaders.contrastive_dataset import ContrastiveDataset
-from dataloaders.contrastive_dataset import object_key_filter
+from dataloaders.contrastive_dataset import object_key_filter, obj_episode_filters
 
 ROOT = '/coc/'
 
@@ -20,6 +20,7 @@ if not os.path.exists(GROUND_TRUTH_FILE):
     GROUND_TRUTH_FILE.replace('coc','srv/rail-lab')
     GROUND_TRUTH_NAMES_FILE.replace('coc','srv/rail-lab')
     ROOT = '/srv/rail-lab/'
+
 
 def find_best_ckpt(csr_ckpt_dir):
     best_ckpt = [f for f in os.listdir(csr_ckpt_dir) if f.endswith('.ckpt')]
@@ -32,7 +33,6 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str, default='flash5/kvr6/dev/data/csr_full_v2_25-04-2023_22-06-27')
     parser.add_argument('--ckpt_dir_csr', type=str, default='checkpoints/model_04-26_11-38')
     parser.add_argument('--ckpt_dir_edge', type=str, default='checkpoints/edge_pred/')
-    parser.add_argument('--test_unseen_objects', action='store_true')
     
     args = parser.parse_args()
     
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     edge_process = FeatureDecoderModule().load_from_checkpoint(find_best_ckpt(args.ckpt_dir_edge))
     get_edge = lambda csr_vec: F.softmax(edge_process(csr_vec), dim=-1)[1]
 
-    test_data = ContrastiveDataset(ROOT+args.data_dir, None, DataSplit.TEST, test_unseen_objects=args.test_unseen_objects)
+    test_data = ContrastiveDataset(ROOT+args.data_dir, None, DataSplit.TEST, test_unseen_objects=False)
     
     obj_names= torch.load(GROUND_TRUTH_NAMES_FILE)['objects']
     assert (obj_names == object_key_filter), "Object names in ground truth file do not match with object names in code."
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     files_list = [f.replace('.json','').replace('obs_','') for f in files_list]
     episodes_list = [int(f)//1000 for f in files_list]
 
-    average_accuracy = []
-    total_correct = 0
-    total_total = 0
+    average_accuracy = {'seen':[],'unseen':[],'total':[]}
+    total_correct = {'seen':0,'unseen':0,'total':0}
+    total_total = {'seen':0,'unseen':0,'total':0}
     
     while True:
         data, episode = test_data.get_next_episode()
@@ -106,16 +106,54 @@ if __name__ == '__main__':
         correct = (pred_edges_episode[seen_and_present_objects].argmax(-1) == gt_edges_episode[seen_and_present_objects].argmax(-1)).sum()
         total = seen_and_present_objects.sum()
 
-        total_correct += correct
-        total_total += total
+
+        total_correct['total'] += correct
+        total_total['total'] += total
 
         accuracy = float(correct/total) if seen_and_present_object_count > 0 else 0
         print(f"{accuracy} = {correct}/{total}")
-        average_accuracy.append(accuracy)
+        average_accuracy['total'].append(accuracy)
+
+        accuracy = float(correct/total) if seen_and_present_object_count > 0 else 0
+        print(f"{accuracy} = {correct}/{total}")
+        average_accuracy['total'].append(accuracy)
+
+        _train_obj, _ = obj_episode_filters(data_split=DataSplit.TRAIN)
+        _val_obj, _ = obj_episode_filters(data_split=DataSplit.VAL)
+        _seen_obj_mask = torch.tensor([1 if (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        _unseen_obj_mask = torch.tensor([1 if not (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        
+        correct_seen = ((pred_edges_episode[seen_and_present_objects].argmax(-1) == gt_edges_episode[seen_and_present_objects].argmax(-1)) * _seen_obj_mask).sum()
+        total_seen = _seen_obj_mask.sum()
+        accuracy = float(correct_seen/total_seen) if total_seen > 0 else 0
+        total_correct['seen'] += correct_seen
+        total_total['seen'] += total_seen
+        average_accuracy['seen'].append(accuracy)
+
+        correct_unseen = ((pred_edges_episode[seen_and_present_objects].argmax(-1) == gt_edges_episode[seen_and_present_objects].argmax(-1)) * _unseen_obj_mask).sum()
+        total_unseen = _unseen_obj_mask.sum()
+        accuracy = float(correct_unseen/total_unseen) if total_unseen > 0 else 0
+        total_correct['unseen'] += correct_unseen
+        total_total['unseen'] += total_unseen
+        average_accuracy['unseen'].append(accuracy)
+
+
         
     print("\n\n")
     print("~~~~~~~~~~~~~~~~~~~~~FINAL RESULTS~~~~~~~~~~~~~~~~~~~~~")
-    print("AVERGE ACCURACY (MACRO AVG.) : ",sum(average_accuracy)/len(average_accuracy))
-    print("AVERGE ACCURACY (MICRO AVG.) : ",float(total_correct/total_total), f"({total_correct}/{total_total})")
+    print("AVERGE ACCURACY (MACRO AVG.) : ",sum(average_accuracy['total'])/len(average_accuracy['total']))
+    print("AVERGE ACCURACY (MICRO AVG.) : ",float(total_correct['total']/total_total['total']), f"({total_correct['total']}/{total_total['total']})")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+    print("\n\n")
+    print("~~~~~~~~~~~~~~~~~~~~~SEEN RESULTS~~~~~~~~~~~~~~~~~~~~~")
+    print("AVERGE ACCURACY (MACRO AVG.) : ",sum(average_accuracy['seen'])/len(average_accuracy['seen']))
+    print("AVERGE ACCURACY (MICRO AVG.) : ",float(total_correct['seen']/total_total['seen']), f"({total_correct['seen']}/{total_total['seen']})")
+    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        
+    print("\n\n")
+    print("~~~~~~~~~~~~~~~~~~~~~UNSEEN RESULTS~~~~~~~~~~~~~~~~~~~~~")
+    print("AVERGE ACCURACY (MACRO AVG.) : ",sum(average_accuracy['unseen'])/len(average_accuracy['unseen']))
+    print("AVERGE ACCURACY (MICRO AVG.) : ",float(total_correct['unseen']/total_total['unseen']), f"({total_correct['unseen']}/{total_total['unseen']})")
     print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
     print("\n\n")

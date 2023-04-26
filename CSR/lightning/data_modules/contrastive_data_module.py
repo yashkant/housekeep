@@ -43,4 +43,4 @@ class ContrastiveDataModule(pl.LightningDataModule):
         return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=self.val_set.collate_fn, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, drop_last=True, worker_init_fn=worker_init_fn)
 
     def test_dataloader(self):
-        return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=self.test_set.collate_fn, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, worker_init_fn=worker_init_fn)
+        return DataLoader(self.test_set, batch_size=self.batch_size, collate_fn=self.test_set.collate_fn, shuffle=False, num_workers=DEFAULT_NUM_WORKERS, pin_memory=True, worker_init_fn=worker_init_fn)
