@@ -26,16 +26,16 @@ class ContrastiveDataset(Dataset):
         self.data_split = data_split
 
         if data_split == DataSplit.TRAIN:
-            use_obj = lambda o: o in np.arange(0,95) or o in np.arange(106,133)
+            use_obj = lambda o: o in np.arange(0,90) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.VAL:
-            use_obj = lambda o: o in np.arange(90,100) or o in np.arange(130,135)
+            use_obj = lambda o: o in np.arange(85,95) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.TEST:
             if test_unseen_objects:
-                use_obj = lambda o: o in np.arange(100,106) or o in np.arange(135,139)
+                use_obj = lambda o: o in np.arange(95,106) or o > 105
             else:
-                use_obj = lambda o: o in np.arange(0,100) or o in np.arange(106,135)
+                use_obj = lambda o: o in np.arange(0,95) or o > 105
             use_episode = lambda e: e <= 10
         else:
             assert False, 'Data split not recognized'

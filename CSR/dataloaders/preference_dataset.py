@@ -1,5 +1,6 @@
 import json
 import os
+import numpy as np
 import random
 from shared.utils import get_box
 from shared.constants import CLASSES_TO_IGNORE
@@ -32,18 +33,18 @@ class PreferenceDataset(Dataset):
                  max_annotations = -1,
                  test_unseen_objects = True
                  ):
-        
+     
         if data_split == DataSplit.TRAIN:
-            use_iid_idx = lambda o: o<40
+            use_obj = lambda o: o in np.arange(0,90) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.VAL:
-            use_iid_idx = lambda o: o>=38 and o<42
+            use_obj = lambda o: o in np.arange(85,95) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.TEST:
             if test_unseen_objects:
-                use_iid_idx = lambda o: o>=59
+                use_obj = lambda o: o in np.arange(95,106) or o > 105
             else:
-                use_iid_idx = lambda o: True
+                use_obj = lambda o: o in np.arange(0,95) or o > 105
             use_episode = lambda e: e <= 10
         else:
             assert False, 'Data split not recognized'
