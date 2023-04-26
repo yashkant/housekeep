@@ -27,9 +27,8 @@ class FeatureDecoderModule(pl.LightningModule):
     def forward(self, x):
         return self.linear(x)
 
-
     def training_step(self, batch, batch_idx):
-        feature, target = batch['features'], batch['labels']
+        feature, target = batch
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 
@@ -41,7 +40,7 @@ class FeatureDecoderModule(pl.LightningModule):
 
 
     def validation_step(self, batch, batch_idx):
-        feature, target = batch['features'], batch['labels']
+        feature, target = batch
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 
@@ -53,7 +52,7 @@ class FeatureDecoderModule(pl.LightningModule):
 
 
     def test_step(self, batch, batch_idx):
-        feature, target = batch['features'], batch['labels']
+        feature, target = batch
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 

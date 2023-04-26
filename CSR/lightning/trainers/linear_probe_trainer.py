@@ -43,7 +43,7 @@ class LinearProbeTrainer(object):
                                               every_n_val_epochs=5)
         learning_rate_callback = LearningRateMonitor(logging_interval='epoch')
 
-        confusion_callback = ConfusionLogger(self.conf.classes)
+        # confusion_callback = ConfusionLogger(self.conf.classes)
 
         # set up the trainer
         trainer = pl.Trainer(max_epochs=self.conf.epochs,
@@ -53,7 +53,8 @@ class LinearProbeTrainer(object):
                              logger=wandb_logger,
                              callbacks=[learning_rate_callback,
                                         checkpoint_callback,
-                                        confusion_callback],
+                                        # confusion_callback
+                                        ],
                              checkpoint_callback=True)
 
         # Train the model
