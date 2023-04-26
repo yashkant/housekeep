@@ -33,10 +33,13 @@ class LinearProbeTrainer(object):
         wandb_logger = WandbLogger(project=self.conf.project_name,
                                    name=self.conf.experiment_name+'_edge',
                                    job_type='train')
+        from datetime import datetime
+        dateTimeObj = datetime.now()
+        timestampStr = dateTimeObj.strftime("%m-%d_%H-%M")
 
         # defining callbacks
         checkpoint_callback = ModelCheckpoint(dirpath=self.conf.checkpoint_path,
-                                              filename='edge_pred/model-{epoch}-{val_acc:.2f}',
+                                              filename='edge_pred_'+timestampStr+'/model-{epoch}-{val_acc:.2f}',
                                               verbose=True,
                                               monitor='val_loss',
                                               mode='min',

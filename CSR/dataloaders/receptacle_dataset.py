@@ -52,8 +52,16 @@ class ReceptacleDataset(Dataset):
         self.CSRprocess.eval()
         get_csr = lambda resnet_vec: torch.nn.functional.normalize(self.CSRprocess.projection_q(resnet_vec), dim=-1).squeeze(0).detach()
         
-        gt_edges = torch.load(GROUND_TRUTH_FILE)
-        files_list = torch.load(GROUND_TRUTH_NAMES_FILE)['files']
+        try:
+            gt_edges = torch.load(GROUND_TRUTH_FILE)
+        except:
+            gt_edges = torch.load(GROUND_TRUTH_FILE.replace('srv/rail-lab','coc'))
+
+        try:
+            files_list = torch.load(GROUND_TRUTH_NAMES_FILE)['files']
+        except:
+            files_list = torch.load(GROUND_TRUTH_NAMES_FILE.replace('srv/rail-lab','coc'))['files']
+
         files_list = [f.replace('.json','').replace('obs_','') for f in files_list]
 
         self.resnet_path = os.path.join(root_dir, 'ihlen_1_int', 

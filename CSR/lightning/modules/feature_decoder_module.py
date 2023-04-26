@@ -32,9 +32,9 @@ class FeatureDecoderModule(pl.LightningModule):
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 
-        # acc = self.train_acc(torch.argmax(pred, dim=1), target)
+        acc = self.train_acc(torch.argmax(pred, dim=1), target)
         self.log('train_loss', loss, on_step=True, on_epoch=True, logger=True)
-        # self.log('train_acc', acc, on_step=True, on_epoch=True, logger=True)
+        self.log('train_acc', acc, on_step=True, on_epoch=True, logger=True)
 
         return loss
 
@@ -44,9 +44,9 @@ class FeatureDecoderModule(pl.LightningModule):
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 
-        # acc = self.val_acc(torch.argmax(pred, dim=1), target)
+        acc = self.val_acc(torch.argmax(pred, dim=1), target)
         self.log('val_loss', loss, on_step=True, on_epoch=True, logger=True)
-        # self.log('val_acc', acc, on_step=True, on_epoch=True, logger=True)
+        self.log('val_acc', acc, on_step=True, on_epoch=True, logger=True)
 
         return loss
 
@@ -56,9 +56,9 @@ class FeatureDecoderModule(pl.LightningModule):
         pred = self(feature)
         loss = torch.nn.CrossEntropyLoss()(pred, target.squeeze(-1))
 
-        # acc = self.val_acc(torch.argmax(pred, dim=1), target)
+        acc = self.val_acc(torch.argmax(pred, dim=1), target)
         self.log('test_loss', loss, on_step=True, on_epoch=True, logger=True)
-        # self.log('test_acc', acc, on_step=True, on_epoch=True, logger=True)
+        self.log('test_acc', acc, on_step=True, on_epoch=True, logger=True)
 
         return loss
 

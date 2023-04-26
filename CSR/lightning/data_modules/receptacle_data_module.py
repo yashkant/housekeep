@@ -10,7 +10,6 @@ from shared.constants import (COLOR_JITTER_BRIGHTNESS,
 from shared.data_split import DataSplit
 from torch.utils.data import DataLoader
 
-
 class ReceptacleDataModule(pl.LightningDataModule):
     def __init__(self, batch_size, data_dir, csr_ckpt_dir, drop_last=True):
         super().__init__()

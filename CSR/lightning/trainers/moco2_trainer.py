@@ -50,8 +50,13 @@ class MocoV2Trainer(object):
                                    mode='online')
 
         # defining callbacks
+
+        from datetime import datetime
+        dateTimeObj = datetime.now()
+        timestampStr = dateTimeObj.strftime("%m-%d_%H-%M")
+
         checkpoint_callback = ModelCheckpoint(dirpath=self.conf.checkpoint_path,
-                                              filename='model/model-{epoch}-{val_loss:.2f}',
+                                              filename='model_'+timestampStr+'/model-{epoch}-{val_loss:.2f}',
                                               verbose=True,
                                               monitor='val_loss',
                                               mode='min',
