@@ -14,90 +14,71 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# 106 objects and 33 receptacles = 139 total
+object_key_filter = ['dutch_oven_1', 'chocolate_milk_pods_1', 'chocolate_1', 'antidepressant_1', 'wipe_warmer_1', 'sponge_1', 'herring_fillets_1', 'dumbbell_rack_1', 'thermal_laminator_1', 'camera_1', 'soap_dish_1', 'teapot_1', 'bleach_cleanser_1', 'bath_sheet_1', 'gloves_1', 'towel_1', 'string_lights_1', 'skillet_lid_1', 'knife_block_1', 'spoon_rest_1', 'lamp_1', 'fork_1', 'mini_soccer_ball_1', 'salt_shaker_1', 'sushi_mat_1', 'helmet_1', 'condiment_1', 'mustard_bottle_1', 'set-top_box_1', 'weight_loss_guide_1', 'cracker_box_1', 'skillet_1', 'toothbrush_pack_1', 'medicine_1', 'lime_squeezer_1', 'tomato_soup_can_1', 'water_bottle_1', 'candle_holder_1', 'cereal_1', 'diaper_pack_1', 'flashlight_1', 'baseball_1', 'clock_1', 'toaster_1', 'heavy_master_chef_can_1', 'spoon_1', 'handbag_1', 'ramekin_1', 'golf_ball_1', 'umbrella_1', 'plant_saucer_1', 'vase_1', 'fruit_snack_1', 'cake_mix_1', 'dishtowel_1', 'hair_dryer_1', 'dustpan_and_brush_1', 'peppermint_1', 'tea_pods_1', 'saute_pan_1', 'sparkling_water_1', 'chopping_board_1', 'coffee_pods_1', 'candy_bar_1', 'softball_1', 'can_opener_1', 'hat_1', 'lantern_1', 'utensil_holder_1', 'master_chef_can_1', 'portable_speaker_1', 'tablet_1', 'electric_heater_1', 'table_lamp_1', 'candy_1', 'coffee_beans_1', 'light_bulb_1', 'dietary_supplement_1', 'cloth_1', 'sanitary_pads_1', 'spatula_1', 'pitcher_base_1', 'washcloth_1', 'plate_1', 'potted_meat_can_1', 'saucer_1', 'blender_jar_1', 'dish_drainer_1', 'gelatin_box_1', 'soap_dispenser_1', 'fondant_1', 'racquetball_1', 'dumbbell_1', 'coffeemaker_1', 'incontinence_pads_1', 'pan_1', 'laptop_1', 'router_1', 'tennis_ball_1', 'plant_1', 'chocolate_box_1', 'shredder_1', 'electric_toothbrush_1', 'dispensing_closure_1', 'sponge_dish_1', 'tampons_1',
+                     'bathroom_0-sink_49_0.urdf', 'kitchen_0-counter_80_0.urdf', 'dining_room_0-table_19_0.urdf', 'bedroom_1-chest_12_0.urdf', 'kitchen_0-counter_79_0.urdf', 'living_room_0-coffee_table_26_0.urdf', 'bedroom_0-bed_33_2.urdf', 'bedroom_1-carpet_41_0.urdf', 'dining_room_0-chair_20_0.urdf', 'kitchen_0-top_cabinet_63_0.urdf', 'kitchen_0-counter_65_0.urdf', 'kitchen_0-top_cabinet_62_0.urdf', 'kitchen_0-counter_64_0.urdf', 'dining_room_0-carpet_52_0.urdf', 'bedroom_2-chair_11_0.urdf', 'bedroom_0-bottom_cabinet_1_0.urdf', 'bedroom_1-table_14_0.urdf', 'bathroom_0-bathtub_46_0.urdf', 'kitchen_0-sink_77_0.urdf', 'bathroom_0-toilet_47_0.urdf', 'kitchen_0-bottom_cabinet_66_0.urdf', 'living_room_0-bottom_cabinet_28_0.urdf', 'bedroom_1-chest_13_0.urdf', 'kitchen_0-fridge_61_0.urdf', 'corridor_0-carpet_51_0.urdf', 'kitchen_0-shelf_83_0.urdf', 'kitchen_0-dishwasher_76_0.urdf', 'living_room_0-sofa_chair_24_0.urdf', 'bedroom_0-bottom_cabinet_0_0.urdf', 'bedroom_2-bed_37_2.urdf', 'living_room_0-carpet_53_0.urdf', 'kitchen_0-bottom_cabinet_no_top_70_0.urdf', 'kitchen_0-oven_68_0.urdf'] 
 
 class ContrastiveDataset(Dataset):
 
     def __init__(self, root_dir, transform, data_split: DataSplit, test_unseen_objects = True):
         # set the root directory
         self.root_dir = root_dir
-        self.scenes_indices = torch.load(os.path.join(root_dir, 'all_scenes_indices.pt'))
-        self.iids = self.scenes_indices['iids']
         self.data_split = data_split
 
         if data_split == DataSplit.TRAIN:
-            mask_by_data_split = slice(0, 40)
+            use_obj = lambda o: o in np.arange(0,95) or o in np.arange(106,133)
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.VAL:
-            mask_by_data_split = slice(38, 42)
+            use_obj = lambda o: o in np.arange(90,100) or o in np.arange(130,135)
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.TEST:
             if test_unseen_objects:
-                mask_by_data_split = slice(59, 100)
+                use_obj = lambda o: o in np.arange(100,106) or o in np.arange(135,139)
             else:
-                mask_by_data_split = slice(0, 100)
+                use_obj = lambda o: o in np.arange(0,100) or o in np.arange(106,135)
             use_episode = lambda e: e <= 10
         else:
             assert False, 'Data split not recognized'
         
-        self.mask = mask_by_data_split
-        #DEBUG: overriding mask for mini dataset
-        if 'mini' in root_dir.split('/')[-1]:
-            self.mask = slice(0, 5)
+        # ## USE ALL OBJECTS AND EPISODES
+        # use_obj = lambda o: True
+        # use_episode = lambda o: True
 
-        elif 'full' in root_dir.split('/')[-1]:
-            self.mask = mask_by_data_split
+        self.resnet_path = os.path.join(root_dir, 'ihlen_1_int', 
+                                    'baseline_phasic_oracle','resnet'
+                                    )
 
-        else:
-            assert False, 'Data path currently {}, should be csr_full or csr_mini'.format(root_dir.split('/')[0])
+        self.scene_indices_array = [[[] for _ in object_key_filter] for _ in object_key_filter]
 
-        self.current_iids = self.iids[self.mask]
+        for file in os.listdir(self.resnet_path):
+            o1, o2, _, episodestep = file.split('_')
+            o1 = int(o1)
+            o2 = int(o2)
+            episodestep = int(episodestep.replace('.pt',''))
+            episode = episodestep//1000
+            if use_episode(episode):
+                if use_obj(o1) and use_obj(o2):
+                    self.scene_indices_array[o1][o2].append((file,episode))
+            #     else:
+            #         print('Skipping object pair ', o1, o2, ' because of object filter')
+            # else:
+            #     print('Skipping file ', file, ' because of episode filter')
 
-        self.scene_indices_array = [[[] for _ in self.iids] for _ in self.iids]
-
-        #TODO: make post post post processing script for this
-        for i in range(len(self.iids)): # i is the index to the object iid
-            for j in range(len(self.iids)):
-                filepath_ij = os.path.join(root_dir, 'indices_partwise', f'{i}_{j}_indices.pt')
-
-                if os.path.exists(filepath_ij):
-                    # print(i, j, filepath_ij)
-
-                    data_array_ij = torch.load(filepath_ij)
-
-                    for dp_ij in data_array_ij['arr']:
-                        assert isinstance(dp_ij[0], int) or isinstance(dp_ij[0], np.int64), f'{dp_ij[0]} is of type {type(dp_ij[0])}'
-                        self.scene_indices_array[i][j].append(dp_ij[0]) # append fidx, ignore bounding boxes
-
-        print(data_split, self.current_iids, self.mask)
-
-        # Note: scene indices array indexed not by index of obj iid NOT obj iid
-        self.masked_scene_indices_arr = np.array(self.scene_indices_array)[self.mask, self.mask]
-        print('number of files for each pair: ', [len(self.masked_scene_indices_arr[i][j]) for i in range(len(self.current_iids)) for j in range(len(self.current_iids))])
-        # print('total: ', sum([len(self.scene_indices_array[i][j]) for i in range(len(self.current_iids)) for j in range(len(self.current_iids))]))
+        print('Scenes Indices Array created!!')
+        # torch.save(self.scene_indices_array, os.path.join(self.root_dir, f'cache_scene_indices_array{data_split}.pt'))
 
         self.indexed_data = []
-        for o1 in range(len(self.current_iids)):
-            for o2 in range(len(self.current_iids)):
-                files = self.masked_scene_indices_arr[o1][o2]
-                for i,f1 in enumerate(files):
-                    for f2 in files[i+1:]:
-                        f1_name = self.scenes_indices['files'][f1]
-                        f2_name = self.scenes_indices['files'][f2]
-                        scene1 = f1_name.split('|')[0]
-                        scene2 = f2_name.split('|')[0]
-                        episode1 = int(f1_name.split('|')[1].split('.')[0].split('_')[-1])//1000
-                        episode2 = int(f2_name.split('|')[1].split('.')[0].split('_')[-1])//1000
-                        # print(scene1, scene2, int(f1_name.split('|')[1].split('.')[0].split('_')[-1]), int(f2_name.split('|')[1].split('.')[0].split('_')[-1]), episode1, episode2)
-                        # raise Exception('stop')
-                        if scene1 == scene2 and episode1 == episode2 and use_episode(episode1): # positive pairs must come from the same scene and episode
-                            o1_original = self.iids.index(self.current_iids[o1])
-                            o2_original = self.iids.index(self.current_iids[o2])
-                            if os.path.exists(self.file_path_resnet(f1_name, o1_original, o2_original)) and os.path.exists(self.file_path_resnet(f2_name, o1_original, o2_original)):
-                                self.indexed_data.append((o1_original, o2_original, f1_name, f2_name)) # all positive pairs
-                            else:
-                                print('missing file: ', self.file_path_resnet(f1_name, o1_original, o2_original), self.file_path_resnet(f2_name, o1_original, o2_original))
-                                raise Exception('missing file')
-       
+        for o1 in range(len(object_key_filter)):
+            for o2 in range(len(object_key_filter)):
+                files_and_episodes = self.scene_indices_array[o1][o2]
+                for i,(f1,e1) in enumerate(files_and_episodes):
+                    for (f2,e2) in files_and_episodes[i+1:]:
+                        if e1 == e2: # positive pairs must come from the same scene and episode
+                            self.indexed_data.append((o1, o2, f1, f2))
+
+        print('Indexed data created!!')
+        # torch.save(self.scene_indices_array, os.path.join(self.root_dir, f'cache_indexed_data{data_split}.pt'))
+
         self.length = len(self.indexed_data)
         print('Total length of dataset type ', data_split, ': ', self.length)
 
@@ -105,26 +86,16 @@ class ContrastiveDataset(Dataset):
         # self.transform = transform
         # assert self.transform is not None
 
-    def file_path_resnet(self, fp, o1, o2): 
-            filepath_full = os.path.join(self.root_dir, 
-                                        fp.split('|')[0], 
-                                        'baseline_phasic_oracle',
-                                        'resnet',
-                                        '{}_{}_{}'.format(o1, o2, fp.split('|')[1].replace('.json','.pt'))
-                                    )
-            return filepath_full
-
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
         obj_1, obj_2, file_path_1, file_path_2 = self.indexed_data[idx]
 
-        file_dict_resnet = lambda fp: torch.load(self.file_path_resnet(fp, obj_1, obj_2))
-
         data_pair = []
         for file_path in [file_path_1, file_path_2]:
-            tensor_data = file_dict_resnet(file_path)
+            full_file_path = os.path.join(self.resnet_path, file_path)
+            tensor_data = torch.load(full_file_path)
             if tensor_data is not None:
                 data_pair.append(tensor_data)
 
