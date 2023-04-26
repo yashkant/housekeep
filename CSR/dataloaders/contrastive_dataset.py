@@ -26,16 +26,16 @@ class ContrastiveDataset(Dataset):
         self.data_split = data_split
 
         if data_split == DataSplit.TRAIN:
-            use_obj = lambda o: o in np.arange(0,90) or o > 105
+            use_obj = lambda o: (0 <= o < 92) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.VAL:
-            use_obj = lambda o: o in np.arange(85,95) or o > 105
+            use_obj = lambda o: (90 <= o < 95) or o > 105
             use_episode = lambda e: e > 10
         elif data_split == DataSplit.TEST:
             if test_unseen_objects:
-                use_obj = lambda o: o in np.arange(95,106) or o > 105
+                use_obj = lambda o: (95 <= o < 106) or o > 105
             else:
-                use_obj = lambda o: o in np.arange(0,95) or o > 105
+                use_obj = lambda o: (0 <= o < 95) or o > 105
             use_episode = lambda e: e <= 10
         else:
             assert False, 'Data split not recognized'
@@ -58,29 +58,38 @@ class ContrastiveDataset(Dataset):
             episode = episodestep//1000
             if use_episode(episode):
                 if use_obj(o1) and use_obj(o2):
+                    if o1 > 105 and o2 > 105:
+                        if random.random() < 0.5: continue
                     self.scene_indices_array[o1][o2].append((file,episode))
-            #     else:
-            #         print('Skipping object pair ', o1, o2, ' because of object filter')
-            # else:
-            #     print('Skipping file ', file, ' because of episode filter')
 
         print('Scenes Indices Array created!!')
-        # torch.save(self.scene_indices_array, os.path.join(self.root_dir, f'cache_scene_indices_array{data_split}.pt'))
+
+        # num_good_pairs = 0
+        # num_bad_pairs = 0
+
+        # for o1 in range(len(object_key_filter)):
+        #     for o2 in range(len(object_key_filter)):
+        #         if o1 < 106 or o2 < 106:
+        #             num_good_pairs += len(self.scene_indices_array[o1][o2])
+        #         else:
+        #             num_bad_pairs += len(self.scene_indices_array[o1][o2])
+
+        # print(num_good_pairs, num_bad_pairs)
 
         self.indexed_data = []
         for o1 in range(len(object_key_filter)):
             for o2 in range(len(object_key_filter)):
                 files_and_episodes = self.scene_indices_array[o1][o2]
                 for i,(f1,e1) in enumerate(files_and_episodes):
+                    assert use_obj(o1) and use_obj(o2)
                     for (f2,e2) in files_and_episodes[i+1:]:
                         if e1 == e2: # positive pairs must come from the same scene and episode
                             self.indexed_data.append((o1, o2, f1, f2))
 
         print('Indexed data created!!')
-        # torch.save(self.scene_indices_array, os.path.join(self.root_dir, f'cache_indexed_data{data_split}.pt'))
 
         self.length = len(self.indexed_data)
-        print('Total length of dataset type ', data_split, ': ', self.length)
+        print('Total length of dataset type ', data_split, '::: ', self.length)
 
         # # save the data augmentations that are to be applied to the images
         # self.transform = transform
