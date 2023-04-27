@@ -22,7 +22,7 @@ class ReceptacleDataset(Dataset):
                  data_split: DataSplit,
                  csr_ckpt_path: str,
                 #  image_input: bool = False,
-                 max_annotations = -1,
+                 max_annotations = 1000,
                  test_unseen_objects = True
                  ):
         
@@ -76,7 +76,7 @@ class ReceptacleDataset(Dataset):
         print('Indexed data created!!')
 
         print('Total length of dataset type ', data_split, ': ', len(self.indexed_data))
-        self.length = max_annotations if max_annotations > 0 else len(self.indexed_data)
+        self.length = min(len(self.indexed_data), max_annotations) if max_annotations > 0 else len(self.indexed_data)
         print('Using length of dataset type ', data_split, ': ', self.length)
         
     def __len__(self):

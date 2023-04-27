@@ -2,16 +2,21 @@ import json
 import os
 import numpy as np
 import random
-from shared.utils import get_box
-from shared.constants import CLASSES_TO_IGNORE
+from tqdm import tqdm
 
 from PIL import Image
 from shared.data_split import DataSplit
 import torch
 from torch.utils.data import Dataset
-from lightning.modules.moco2_module import Moco2Module
 from lightning.modules.moco2_module_mini import MocoV2Lite
 from transformers import CLIPImageProcessor
+from dataloaders.contrastive_dataset import object_key_filter, obj_episode_filters 
+
+
+GROUND_TRUTH_FILE = '/srv/rail-lab/flash5/mpatel377/data/csr/scene_graph_edges_complete.pt'
+GROUND_TRUTH_NAMES_FILE = '/srv/rail-lab/flash5/mpatel377/data/csr/scene_graph_edges_names.pt'
+
+MAP_FILE = '/coc/flash5/mpatel377/data/csr/preference_map_universal.pt'
 
 def get_preference(item1, item2, episode_map, persona=None):
     if persona is not None:
@@ -30,85 +35,151 @@ class PreferenceDataset(Dataset):
                  data_split: DataSplit,
                  csr_ckpt_path: str,
                  image_input: bool = False,
-                 max_annotations = -1,
+                 max_annotations = 100000,
                  test_unseen_objects = True
                  ):
      
-        if data_split == DataSplit.TRAIN:
-            use_obj = lambda o: o in np.arange(0,90) or o > 105
-            use_episode = lambda e: e > 10
-        elif data_split == DataSplit.VAL:
-            use_obj = lambda o: o in np.arange(85,95) or o > 105
-            use_episode = lambda e: e > 10
-        elif data_split == DataSplit.TEST:
-            if test_unseen_objects:
-                use_obj = lambda o: o in np.arange(95,106) or o > 105
-            else:
-                use_obj = lambda o: o in np.arange(0,95) or o > 105
-            use_episode = lambda e: e <= 10
-        else:
-            assert False, 'Data split not recognized'
-
-        if image_input:
-            raise NotImplementedError("Image input not implemented yet")
-            self.CSRprocess = Moco2Module().load_from_checkpoint(csr_ckpt_path)
-        else:
-            self.CSRprocess = MocoV2Lite().load_from_checkpoint(csr_ckpt_path)
+       
+        use_obj, use_episode = obj_episode_filters(data_split, test_unseen_objects)
+        
+        self.CSRprocess = MocoV2Lite().load_from_checkpoint(csr_ckpt_path)
         self.CSRprocess.eval()
         get_csr = lambda resnet_vec: torch.nn.functional.normalize(self.CSRprocess.projection_q(resnet_vec), dim=-1)
+        self.clip_path = '/srv/rail-lab/flash5/mpatel377/data/csr_clips/'
         
-        split_str = {DataSplit.TRAIN:'train', DataSplit.TEST:'test', DataSplit.VAL:'val'}[data_split]
-        index_path = os.path.join(root_dir, '..', f'{split_str}_indices.pt')
-        print(f'Loading index from {index_path}')
-        original_index = torch.load(index_path)
-        
-        file_dict = lambda fp: json.load(open(os.path.join(root_dir, fp.split('|')[0], 
-                                                'baseline_phasic_oracle',
-                                                'csr',
-                                                fp.split('|')[1])))
+        try:
+            gt_edges = torch.load(GROUND_TRUTH_FILE)
+        except:
+            gt_edges = torch.load(GROUND_TRUTH_FILE.replace('srv/rail-lab','coc'))
 
-        get_resnet = lambda fp, obj_1, obj_2 : torch.load(open(os.path.join(self.root_dir, 
-                                        fp.split('|')[0], 
-                                        'baseline_phasic_oracle',
-                                        'resnet',
-                                        '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.pt')))))
-        
-        get_image = lambda fp, obj_1, obj_2 : torch.load(open(os.path.join(self.root_dir, 
-                                        fp.split('|')[0], 
-                                        'baseline_phasic_oracle',
-                                        'images',
-                                        '{}_{}_{}'.format(obj_1, obj_2, fp.split('|')[1].replace('.json','.png')))))
-        
-        ## TODO: Varify that this is the correct way to get the CLIP features
-        get_clip_feature = CLIPImageProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        try:
+            files_list = torch.load(GROUND_TRUTH_NAMES_FILE)['files']
+            obj_list = torch.load(GROUND_TRUTH_NAMES_FILE)['objects']
+        except:
+            files_list = torch.load(GROUND_TRUTH_NAMES_FILE.replace('srv/rail-lab','coc'))['files']
+            obj_list = torch.load(GROUND_TRUTH_NAMES_FILE.replace('srv/rail-lab','coc'))['objects']
+            self.clip_path = '/coc/flash5/mpatel377/data/csr_clips/'
 
-        def get_features(file, item):
-            if image_input:
-                csr_input = get_image(file, original_index.index(item['iid']),  original_index.index(item['iid']))
-            else:
-                csr_input = get_resnet(file, original_index.index(item['iid']),  original_index.index(item['iid']))
-            csr_feature = get_csr(csr_input)
-            clip_feature = get_clip_feature(item['cropped_image']).data['pixel_values'][0].reshape(-1)
-            return csr_feature, torch.from_numpy(clip_feature)
-
-        self.data = []
-        for file in original_index['files']:
-            episode = int(file.split('|')[1].split('.')[0].split('_')[-1])//1000
-            if not use_episode(episode):
-                continue
-            items = file_dict['items']
-            gt_mapping = file_dict['correct_mapping']
-            for item1 in [i for i in items if i['type'] == 'obj']:
-                if use_iid_idx(item1['iid']):
-                    csr_feature1, clip_feature1 = get_features(file, item1)
-                    for item2 in [i for i in items if i['type'] == 'rec']:
-                        if use_iid_idx(item2['iid']):
-                            csr_feature2, clip_feature2 = get_features(file, item2)
-                            label = get_preference(item1, item2, gt_mapping, persona=None)
-                            self.data.append(((csr_feature1, clip_feature1, csr_feature2, clip_feature2), label))
-                        
-        self.length = max_annotations if max_annotations > 0 else len(self.data)
+        self.final_map = {}
+        seen_episodes = []
         
+        def make_final_map():
+            if os.path.exists(MAP_FILE):
+                self.final_map = torch.load(MAP_FILE)
+                return
+            datadir = '/srv/cvmlp-lab/flash1/gchhablani3/housekeep/csr_raw/ihlen_1_int/baseline_phasic_oracle/observations'
+            for file in tqdm(os.listdir(datadir)):
+                episode = int(file.replace('.json','').split('_')[-1])//1000
+                if episode not in seen_episodes:
+                    seen_episodes.append(episode)
+                    data = json.loads(json.load(open(os.path.join(datadir, file))))[0]['cos_eor']['correct_mapping']
+                    for o,rr in data.items():
+                        if o in obj_list:
+                            if obj_list.index(o) not in self.final_map: self.final_map[obj_list.index(o)] = []
+                            self.final_map[obj_list.index(o)] += [obj_list.index(r) for r in rr if r in obj_list]
+            torch.save(self.final_map, MAP_FILE)
+
+
+        self.resnet_path = os.path.join(root_dir, 'ihlen_1_int', 
+                                    'baseline_phasic_oracle','resnet'
+                                    )
+
+
+
+        self.indexed_data = []
+
+        def is_obj(o):
+            return o < 106
+        
+        self.object_clips = {}
+        self.receptacle_clips = {}
+        self.object_csrs = {}
+        self.receptacle_csrs = {}
+        
+        for clipfile in tqdm(os.listdir(self.clip_path)):
+            epstep, objidx = clipfile.replace('.pt','').split('_')
+            objidx = int(objidx)
+            if use_episode(int(epstep)//1000) and use_obj(objidx):
+                if is_obj(objidx):
+                    if objidx not in self.object_clips:
+                        self.object_clips[objidx] = {}
+                    self.object_clips[objidx][int(epstep)]=torch.load(os.path.join(self.clip_path, clipfile)).detach()
+                else:
+                    if objidx not in self.receptacle_clips:
+                        self.receptacle_clips[objidx] = {}
+                    self.receptacle_clips[objidx][int(epstep)]=torch.load(os.path.join(self.clip_path, clipfile)).detach()
+
+        print("Loaded clips")
+
+        for resnetfile in tqdm(os.listdir(self.resnet_path)):
+            o1, o2, _, episodestep = resnetfile.split('_')
+            episodestep = episodestep.replace('.pt','')
+            if o2 == o1:
+                objidx = int(o1)
+                if use_episode(int(episodestep)//1000) and use_obj(objidx):
+                    episodestep = int(episodestep.replace('.pt',''))
+                    episode = episodestep//1000
+                    csr_vec = get_csr(torch.load(os.path.join(self.resnet_path, resnetfile)))
+                    if is_obj(objidx):
+                        if objidx not in self.object_csrs:
+                            self.object_csrs[objidx] = {}
+                        self.object_csrs[objidx][int(episodestep)] = csr_vec.detach()
+                    else:
+                        if objidx not in self.receptacle_csrs:
+                            self.receptacle_csrs[objidx] = {}
+                        self.receptacle_csrs[objidx][int(episodestep)] = csr_vec.detach()
+        
+        print("Loaded resnets")
+
+        make_final_map()
+
+        print("Map generated")
+
+        self.indexed_data = []
+        for obj in tqdm(self.object_clips):
+            for epstep_obj in self.object_clips[obj]:
+                if obj in self.object_csrs and epstep_obj in self.object_csrs[obj]:
+                    for receptacle in self.receptacle_clips:
+                        for epstep_rec in self.receptacle_clips[receptacle]:
+                            if receptacle in self.receptacle_csrs and epstep_rec in self.receptacle_csrs[receptacle]:
+                                label = torch.tensor([receptacle in self.final_map[obj]])
+                                self.indexed_data.append((obj, epstep_obj, receptacle, epstep_rec, label))
+
+        print('Indexed data created!!')
+
+        # self.feature_size = 2048
+        self.feature_size = 1024
+
+        print('Total length of dataset type ', data_split, ': ', len(self.indexed_data))
+        self.length = min(len(self.indexed_data), max_annotations) if max_annotations > 0 else len(self.indexed_data)
+        print('Using length of dataset type ', data_split, ': ', self.length)
+
+        self.is_train = True
+        self.episode_curr = -1
+
+    def get_next_episode(self):
+        self.episode_curr += 1
+        if self.episode_curr >= 10:
+            return None
+        dataitems = {}
+        for datapoint in self.indexed_data:
+            obj, epstep_obj, receptacle, epstep_rec, label = datapoint
+            if epstep_obj//1000 == self.episode_curr:
+                clip_obj = self.object_clips[obj][epstep_obj]
+                csr_obj = self.object_csrs[obj][epstep_obj]
+                clip_receptacle = self.receptacle_clips[receptacle][epstep_rec]
+                csr_receptacle = self.receptacle_csrs[receptacle][epstep_rec]
+                dataitem = {'csr_item_1':csr_obj, 'clip_item_1':clip_obj, 'csr_item_2':csr_receptacle, 'clip_item_2':clip_receptacle, 'label':label}
+                if obj not in dataitems: dataitems[obj] = {}
+                if receptacle not in dataitems[obj]: dataitems[obj][receptacle] = []
+                dataitems[obj][receptacle].append(self.collate_fn([dataitem]))
+        
+        for obj in dataitems:
+            for rec in dataitems[obj]:
+                dataitems[obj][rec] =  torch.mean(torch.stack([d[0] for d in dataitems[obj][rec]], dim=0), dim=0), dataitems[obj][rec][0][1]
+        
+        return dataitems
+
     def __len__(self):
         return self.length
 
@@ -118,4 +189,32 @@ class PreferenceDataset(Dataset):
                     data : (csr_feature1, clip_feature1, csr_feature2, clip_feature2)
                     label: 0 or 1
         """
-        return self.data[idx]
+        obj, epstep_obj, receptacle, epstep_rec, label = self.indexed_data[idx]
+        clip_obj = self.object_clips[obj][epstep_obj]
+        csr_obj = self.object_csrs[obj][epstep_obj]
+        clip_receptacle = self.receptacle_clips[receptacle][epstep_rec]
+        csr_receptacle = self.receptacle_csrs[receptacle][epstep_rec]
+        dataitem = {'csr_item_1':csr_obj, 'clip_item_1':clip_obj, 'csr_item_2':csr_receptacle, 'clip_item_2':clip_receptacle, 'label':label}
+        return dataitem
+
+    def collate_fn(self, data_points):
+        ''' Collate function for dataloader.
+            Args:
+                data_points: A list of dicts'''
+
+        # data_points is a list of dicts
+        csr_embbs_1 = torch.cat([torch.tensor(d['csr_item_1']) for d in data_points], dim=0)
+        clip_embbs_1 = torch.cat([torch.tensor(d['clip_item_1']) for d in data_points], dim=0)
+        csr_embbs_2 = torch.cat([torch.tensor(d['csr_item_2']) for d in data_points], dim=0)
+        clip_embbs_2 = torch.cat([torch.tensor(d['clip_item_2']) for d in data_points], dim=0)
+
+        # input_tensor = torch.cat([csr_embbs_1, clip_embbs_1, csr_embbs_2, clip_embbs_2], dim=1)
+        input_tensor = torch.cat([clip_embbs_1, clip_embbs_2], dim=1)
+
+        labels = torch.tensor([d['label'] for d in data_points]).float()
+
+        # if self.is_train:
+        #     return input_tensor, labels, data_points
+
+        # else:
+        return input_tensor, labels

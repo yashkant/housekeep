@@ -30,8 +30,8 @@ def find_best_ckpt(csr_ckpt_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str, default='flash5/kvr6/dev/data/csr_full_v2_25-04-2023_22-06-27')
-    parser.add_argument('--ckpt_dir_csr', type=str, default='checkpoints/model_04-26_11-38')
+    parser.add_argument('--data_dir', type=str, default='flash5/kvr6/dev/data/csr_full_v2_test_26-04-2023_13-51-28')
+    parser.add_argument('--ckpt_dir_csr', type=str, default='checkpoints/model')
     parser.add_argument('--ckpt_dir_edge', type=str, default='checkpoints/edge_pred/')
     
     args = parser.parse_args()
@@ -120,8 +120,10 @@ if __name__ == '__main__':
 
         _train_obj, _ = obj_episode_filters(data_split=DataSplit.TRAIN)
         _val_obj, _ = obj_episode_filters(data_split=DataSplit.VAL)
-        _seen_obj_mask = torch.tensor([1 if (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
-        _unseen_obj_mask = torch.tensor([1 if not (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        # _seen_obj_mask = torch.tensor([1 if (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        # _unseen_obj_mask = torch.tensor([1 if not (_train_obj(o) or _val_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        _seen_obj_mask = torch.tensor([1 if (_train_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
+        _unseen_obj_mask = torch.tensor([1 if not (_train_obj(o)) else 0 for o in range(106)])[seen_and_present_objects]
         
         correct_seen = ((pred_edges_episode[seen_and_present_objects].argmax(-1) == gt_edges_episode[seen_and_present_objects].argmax(-1)) * _seen_obj_mask).sum()
         total_seen = _seen_obj_mask.sum()

@@ -1,6 +1,6 @@
 project_name: 'contrastive'
 experiment_name: 'all_scenes'
-data_path: '/coc/flash5/kvr6/dev/data/csr_full_v2_25-04-2023_22-06-27'
+data_path: '/coc/flash5/kvr6/dev/data/csr_mini_22-04-2023_18-46-11'
 checkpoint_path: 'checkpoints'
 model_lite: True # using MovoV2Lite that does not load resnet
 seed: 0
@@ -23,6 +23,4 @@ early_stop: false
 accelerator: 'ddp'
 pretrain_path: ''
 train_object_representation: false
-queue_size: 256
-max_edge_annotations: 1000
-hidden_size: 2048
+queue_size: 16
